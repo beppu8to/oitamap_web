@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>世界と大分がつながる 工場・港 大調査地図</title>
+<meta name="description" content="大分市臨海工業地帯の工場どうしがやり取りする原料と製品の流れを、手書き地図から見える化しました。工場にマウスを乗せると、つながっている流れが光ります。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Yomogi&family=Zen+Kurenaido&display=swap" rel="stylesheet">
+<style>
+/* =============================================================================
+   大分臨海工業地帯マップ  ―  スタイル
+   模造紙（クラフト紙）の質感 + 手書き感 + すこしオシャレに
+   ========================================================================== */
+
+:root {
+  --paper:      #d9c8a4;
+  --paper-hi:   #e5d7b8;
+  --paper-lo:   #cbb891;
+  --land:       #e7dcc0;
+  --ink:        #33291b;
+  --ink-soft:   #6b5c44;
+  --accent:     #b8402f;   /* タイトルの丸 */
+
+  --c-import:   #2f6f92;
+  --c-exchange: #c15b3c;
+  --c-energy:   #cf9526;
+  --c-product:  #5f7d43;
+
+  --card-bg:    #fbf6e9;
+  --shadow:     rgba(60, 45, 25, .28);
+  --maxw:       1180px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:    #2b2620;
+    --paper-hi: #363029;
+    --paper-lo: #211d18;
+    --land:     #3a332a;
+    --ink:      #efe6d3;
+    --ink-soft: #b8ab92;
+    --accent:   #e0755f;
+    --c-import:   #6db2d6;
+    --c-exchange: #e88b68;
+    --c-energy:   #edc25e;
+    --c-product:  #9cc072;
+    --card-bg:  #35302a;
+    --shadow:   rgba(0, 0, 0, .5);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: "Zen Kurenaido", "Yu Gothic", "Hiragino Sans", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(120% 90% at 50% -10%, var(--paper-hi), transparent 60%),
+    repeating-linear-gradient(115deg, var(--paper) 0 7px, var(--paper-lo) 7px 14px),
+    var(--paper);
+  background-attachment: fixed;
+  line-height: 1.85;
+  overflow-x: hidden;
+}
+
+.paper-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) { .paper-noise { mix-blend-mode: overlay; opacity: .25; } }
+
+main, .site-header, .site-footer { position: relative; z-index: 1; }
+
+/* ---------------- ヘッダー ---------------- */
+.site-header {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 32px 20px 8px;
+  text-align: center;
+}
+
+.school {
+  font-family: "Yomogi", cursive;
+  margin: 0 0 6px;
+  color: var(--ink-soft);
+  letter-spacing: .08em;
+}
+
+h1 {
+  font-family: "Kaisei Decol", serif;
+  font-weight: 700;
+  margin: 0 auto;
+  line-height: 1.25;
+  font-size: clamp(1.8rem, 5.5vw, 3.1rem);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: .12em;
+}
+h1 .t-globe, h1 .t-oita {
+  position: relative;
+  padding: 0 .12em;
+  color: var(--accent);
+}
+h1 .t-globe::after, h1 .t-oita::after {
+  content: "";
+  position: absolute;
+  inset: -6% -4% -10%;
+  border: 2.5px solid var(--accent);
+  border-radius: 48% 52% 55% 45% / 55% 48% 52% 45%;
+  opacity: .8;
+}
+h1 .t-and { font-size: .62em; color: var(--ink-soft); }
+h1 .t-line {
+  position: relative;
+  background-image: linear-gradient(transparent 78%, rgba(184,64,47,.35) 0);
+}
+h1 .t-sub {
+  flex-basis: 100%;
+  margin-top: .18em;
+  font-size: .82em;
+  letter-spacing: .04em;
+}
+h1 .t-mark {
+  color: var(--accent);
+  border: 2.5px solid var(--accent);
+  border-radius: 50%;
+  padding: 0 .16em;
+  display: inline-block;
+  transform: rotate(-6deg);
+}
+
+.lead {
+  max-width: 680px;
+  margin: 14px auto 0;
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+
+.port-note {
+  max-width: 760px;
+  margin: 18px auto 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--card-bg) 55%, transparent);
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 35%, transparent);
+  border-radius: 10px;
+}
+.port-note .anchor { font-size: 1.4rem; line-height: 1.4; }
+.port-note p { margin: 0; font-size: .93rem; }
+
+/* ---------------- コントロール ---------------- */
+main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22px;
+}
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.legend button {
+  font: inherit;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  padding: 3px 10px 3px 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background .15s, border-color .15s, opacity .15s;
+}
+.legend button .swatch {
+  width: 22px; height: 0;
+  border-top: 4px dashed currentColor;
+}
+.legend button.dim { opacity: .34; }
+.legend button.on  { background: color-mix(in srgb, currentColor 15%, transparent); border-color: currentColor; }
+.legend button:hover { background: color-mix(in srgb, currentColor 12%, transparent); }
+
+.toggles { display: flex; gap: 10px; }
+.btn {
+  font-family: "Yomogi", cursive;
+  font-size: .95rem;
+  cursor: pointer;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  background: var(--card-bg);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--shadow);
+  transition: transform .1s, box-shadow .1s, background .15s;
+}
+.btn:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--shadow); }
+.btn:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--shadow); }
+.btn[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-ghost { box-shadow: none; border-style: dashed; background: transparent; }
+
+.hint {
+  font-family: "Yomogi", cursive;
+  color: var(--ink-soft);
+  font-size: .92rem;
+  margin: 14px 2px 0;
+}
+
+/* ---------------- 地図 ---------------- */
+.map-wrap {
+  position: relative;
+  margin-top: 8px;
+  display: flex;
+  align-items: stretch;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background:
+    radial-gradient(80% 60% at 30% 20%, color-mix(in srgb, var(--land) 60%, transparent), transparent 70%),
+    var(--paper-hi);
+  box-shadow: 4px 6px 0 var(--shadow);
+  overflow: hidden;
+}
+
+.map-stage { position: relative; flex: 1 1 auto; min-width: 0; }
+.map-stage::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 45%, transparent);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#map { display: block; width: 100%; height: auto; touch-action: manipulation; position: relative; z-index: 1; }
+
+/* 陸・海 */
+.land {
+  fill: var(--land);
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  filter: url(#rough);
+}
+.sea-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--c-import) 70%, transparent);
+  stroke-width: 2;
+  stroke-dasharray: 2 7;
+  stroke-linecap: round;
+  opacity: .6;
+}
+.road {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 55%, transparent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  filter: url(#roughSoft);
+  opacity: .5;
+}
+.road-dash {
+  fill: none;
+  stroke: var(--paper-hi);
+  stroke-width: 1.6;
+  stroke-dasharray: 6 8;
+}
+
+/* 流れ（矢印） */
+.flow {
+  fill: none;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  opacity: .5;
+  transition: opacity .25s, stroke-width .25s;
+  stroke-dasharray: 7 6;
+  animation: drift 3s linear infinite;
+}
+.flow.k-import   { stroke: var(--c-import); }
+.flow.k-exchange { stroke: var(--c-exchange); }
+.flow.k-energy   { stroke: var(--c-energy); }
+.flow.k-product  { stroke: var(--c-product); }
+
+.flow.active {
+  opacity: 1;
+  stroke-width: 4;
+  animation: drift 1s linear infinite;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.flow.faded { opacity: .08; }
+.flow.hidden-kind { display: none; }
+
+@keyframes drift { to { stroke-dashoffset: -26; } }
+
+.flow-label {
+  font-family: "Yomogi", cursive;
+  font-size: 13px;
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--card-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+.flow-label.show { opacity: 1; }
+
+.particle { pointer-events: none; }
+
+/* ノード（ふせん） */
+.node { cursor: pointer; }
+.node .chip {
+  fill: var(--card-bg);
+  stroke: var(--ink);
+  stroke-width: 2;
+  filter: url(#roughSoft);
+}
+.node .chip-tab { fill: var(--accent); opacity: .85; }
+.node text {
+  font-family: "Zen Kurenaido", sans-serif;
+  fill: var(--ink);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+.node.factory text { font-size: 15px; font-weight: 700; }
+.node.world text, .node.dest text { font-size: 13px; }
+
+.node.world .chip  { fill: color-mix(in srgb, var(--c-import) 18%, var(--card-bg)); stroke-dasharray: 4 3; }
+.node.dest .chip   { fill: color-mix(in srgb, var(--c-product) 16%, var(--card-bg)); stroke-dasharray: 4 3; }
+
+.node .dot { stroke: var(--ink); stroke-width: 1.5; }
+.node.t-steel   .dot { fill: #8a8f98; }
+.node.t-chem    .dot { fill: #c98b3b; }
+.node.t-energy  .dot { fill: #d8b23c; }
+.node.t-paper   .dot { fill: #cdbf9a; }
+.node.t-ship    .dot { fill: #3d7a86; }
+.node.t-port    .dot { fill: #b25b43; }
+.node.t-machine .dot { fill: #6b7f92; }
+
+.node .chip, .node text { transition: transform .18s; }
+.node:hover .chip, .node.active .chip {
+  stroke-width: 3;
+  filter: url(#roughSoft) drop-shadow(2px 3px 3px var(--shadow));
+}
+.node.active .chip { stroke: var(--accent); }
+.node.faded { opacity: .28; }
+
+/* ---------------- 情報カード ---------------- */
+.info-card {
+  flex: 0 0 312px;
+  width: 312px;
+  align-self: stretch;
+  background: var(--card-bg);
+  border-left: 3px solid var(--ink);
+  padding: 20px 18px 18px;
+  overflow-y: auto;
+  position: relative;
+}
+.info-card .tape {
+  position: absolute;
+  top: 8px; left: 16px;
+  width: 68px; height: 18px;
+  transform: rotate(-3.5deg);
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--c-energy) 55%, transparent) 0 6px,
+    color-mix(in srgb, var(--c-energy) 38%, transparent) 6px 12px);
+  border: 1px solid color-mix(in srgb, var(--c-energy) 40%, transparent);
+}
+.info-card.is-empty .tape,
+.info-card.is-empty .close,
+.info-card.is-empty h2,
+.info-card.is-empty .info-note,
+.info-card.is-empty .info-cols,
+.info-card.is-empty .info-links { display: none; }
+.info-card .placeholder {
+  font-family: "Yomogi", cursive;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.info-card:not(.is-empty) .placeholder { display: none; }
+.info-card .close {
+  position: absolute;
+  top: 6px; right: 8px;
+  border: none; background: transparent;
+  font-size: 1.3rem; line-height: 1;
+  cursor: pointer; color: var(--ink-soft);
+}
+.info-card h2 {
+  font-family: "Kaisei Decol", serif;
+  margin: 20px 0 8px;
+  font-size: 1.15rem;
+}
+.info-card .info-cols li,
+.info-card .info-links li { line-height: 1.5; }
+.info-note { margin: 0 0 12px; font-size: .9rem; }
+.info-cols { display: flex; gap: 14px; }
+.info-cols > div { flex: 1; min-width: 0; }
+.info-card h3 {
+  font-family: "Yomogi", cursive;
+  font-size: .82rem;
+  margin: 0 0 4px;
+  color: var(--ink-soft);
+  border-bottom: 1.5px dashed currentColor;
+  padding-bottom: 2px;
+}
+.info-card ul { margin: 0; padding-left: 1.1em; font-size: .86rem; }
+.info-card li { margin: 2px 0; }
+.info-links { margin-top: 12px; }
+.info-links ul { padding-left: 0; }
+
+/* ---------------- まとめ・元地図 ---------------- */
+.summary {
+  margin-top: 40px;
+  padding: 22px 24px;
+  background: color-mix(in srgb, var(--card-bg) 60%, transparent);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 3px 4px 0 var(--shadow);
+}
+.summary h2 { font-family: "Kaisei Decol", serif; margin: 0 0 8px; }
+.summary p { margin: 0; }
+
+.original { margin-top: 26px; }
+.original summary {
+  font-family: "Yomogi", cursive;
+  cursor: pointer;
+  padding: 8px 0;
+  color: var(--ink-soft);
+}
+.original figure { margin: 12px 0 0; text-align: center; }
+.original img {
+  max-width: 100%;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 3px 4px 0 var(--shadow);
+}
+.original figcaption { font-size: .85rem; color: var(--ink-soft); margin-top: 6px; }
+
+.site-footer {
+  max-width: var(--maxw);
+  margin: 30px auto 40px;
+  padding: 0 20px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: .9rem;
+}
+.site-footer .tiny { font-size: .8rem; opacity: .8; }
+.site-footer code { background: color-mix(in srgb, var(--ink) 12%, transparent); padding: 1px 5px; border-radius: 4px; }
+
+/* ---------------- レスポンシブ ---------------- */
+@media (max-width: 860px) {
+  .controls { flex-direction: column; align-items: flex-start; }
+  .map-wrap { flex-direction: column; }
+  .info-card {
+    flex: none;
+    width: 100%;
+    border-left: none;
+    border-top: 3px solid var(--ink);
+    max-height: none;
+  }
+  .info-card.is-empty { display: none; }
+  .info-card .tape { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow, .flow.active { animation: none; }
+  .particle { display: none; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="paper-noise" aria-hidden="true"></div>
+
+<header class="site-header">
+  <p class="school">✎ <span id="school"></span></p>
+  <h1>
+    <span class="t-globe">世界</span><span class="t-and">と</span><span class="t-oita">大分</span><span class="t-and">が</span><span class="t-line">つながる</span>
+    <span class="t-sub">工場・港 <span class="t-mark">大</span>調査地図</span>
+  </h1>
+  <p class="lead" id="trigger"></p>
+  <div class="port-note">
+    <span class="anchor">⚓</span>
+    <p id="port"></p>
+  </div>
+</header>
+
+<main>
+  <section class="controls" aria-label="表示の切りかえ">
+    <div class="legend" id="legend"></div>
+    <div class="toggles">
+      <button type="button" id="playAll" class="btn" aria-pressed="false">▶ ぜんぶ動かす</button>
+      <button type="button" id="reset" class="btn btn-ghost">↺ もどす</button>
+    </div>
+  </section>
+
+  <p class="hint" id="hint">工場のふせんにマウスを乗せる（スマホはタップ）と、その工場に出入りする原料・製品の流れが光ります。</p>
+
+  <section class="map-wrap">
+    <div class="map-stage">
+    <svg id="map" viewBox="0 0 1280 720" role="img" aria-labelledby="mapTitle">
+      <title id="mapTitle">大分臨海工業地帯 原料・製品の流れ地図</title>
+      <defs>
+        <filter id="rough" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="7" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="roughSoft" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" seed="3" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/>
+        </filter>
+      </defs>
+      <g id="layer-land"></g>
+      <g id="layer-flows"></g>
+      <g id="layer-particles"></g>
+      <g id="layer-nodes"></g>
+    </svg>
+    </div>
+
+    <aside class="info-card is-empty" id="infoCard">
+      <button type="button" class="close" id="infoClose" aria-label="とじる">×</button>
+      <span class="tape" aria-hidden="true"></span>
+      <p class="placeholder">工場のふせんにマウスを乗せる（スマホはタップ）と、ここに「原料」「製品」「つながっている先」が出ます。</p>
+      <h2 id="infoName"></h2>
+      <p class="info-note" id="infoNote"></p>
+      <div class="info-cols">
+        <div>
+          <h3>入ってくるもの（原料）</h3>
+          <ul id="infoMaterials"></ul>
+        </div>
+        <div>
+          <h3>出ていくもの（製品）</h3>
+          <ul id="infoProducts"></ul>
+        </div>
+      </div>
+      <div class="info-links">
+        <h3>つながっている先</h3>
+        <ul id="infoConnections"></ul>
+      </div>
+    </aside>
+  </section>
+
+  <section class="summary">
+    <h2>まとめ <span aria-hidden="true">🚢</span></h2>
+    <p id="summary"></p>
+  </section>
+
+  <section class="original">
+    <details>
+      <summary>元の手書き地図（模造紙）を見る</summary>
+      <figure>
+        <img src="assets/img/original-map.jpg" alt="模造紙に手書きされた、大分市臨海工業地帯の工場・港の調査地図">
+        <figcaption>この地図をもとにWEB化しました。</figcaption>
+      </figure>
+    </details>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>自由研究「世界と大分がつながる 工場・港 大調査地図」を WEB にしたものです。</p>
+  <p class="tiny">工場名・流れは手書き地図の読み取りです。工場名・流れが地図とちがうときは直せます（作者にご連絡ください）。</p>
+</footer>
+<script>
+/* =============================================================================
+   大分臨海工業地帯 原料・製品マップ  ―  データ定義
+   -----------------------------------------------------------------------------
+   ここだけ直せば地図の中身を変えられます。
+
+   NODES : 工場や「世界／届け先」のふせん（点）
+     id       : 半角英数の名前（FLOWSからこのidで参照します）
+     name     : 画面に出る名前
+     kind     : "factory"（工場） / "world"（海外から入ってくる） / "dest"（出ていく先）
+     x, y     : 地図の中の位置。viewBox は 0 0 1280 720。
+     tags     : 工場の種類（アイコンの色分けに使用）"steel"|"chem"|"energy"|"paper"|"ship"|"port"|"machine"
+     materials: 入ってくるもの（原料）※工場のみ
+     products : 出ていくもの（製品）※工場のみ
+     note     : ふきだしメモ（手書き地図の内容をやさしく要約）
+
+   FLOWS : ものの流れ（矢印）
+     from, to : NODES の id
+     label    : 流れているもの
+     kind     : "import"（原料の輸入・青） / "exchange"（工場どうしのやり取り・赤）
+                "energy"（電気・ガス・黄） / "product"（製品の出荷・緑）
+   ========================================================================== */
+
+const NODES = [
+  /* ---------- 工場 ---------- */
+  {
+    id: "nissetsu", name: "日本製鉄", kind: "factory", tags: "steel",
+    x: 265, y: 335,
+    materials: ["鉄鉱石（ブラジル）", "石炭（オーストラリア）"],
+    products: ["熱延鋼板（自動車用など）", "厚板（造船用など）", "副生ガス・残重油"],
+    note: "鉄鉱石と石炭を船で運び入れ、熱延鋼板や厚板をつくる。厚板は近くの造船所やクレーン工場へ、鋼板は自動車・建材として全国へ。工場から出る副生ガスや残重油は発電所の燃料になる。"
+  },
+  {
+    id: "kkh", name: "九州共同発電", kind: "factory", tags: "energy",
+    x: 150, y: 208,
+    materials: ["石炭（オーストラリア）", "副生ガス・残重油（日本製鉄）"],
+    products: ["電力"],
+    note: "火力発電所。石炭に加えて、となりの日本製鉄から出る副生ガスや残重油も燃料にする。つくった電気は九州電力と日本製鉄へ送る。"
+  },
+  {
+    id: "showa", name: "クラサスケミカル大分コンビナート", kind: "factory", tags: "chem",
+    x: 455, y: 235,
+    materials: ["ナフサ（ENEOS大分製油所）"],
+    products: ["エチレン", "プロピレン", "石油化学の基礎製品"],
+    note: "製油所から届くナフサを分解して、エチレンやプロピレンなどの石油化学の「もと」をつくり、近くの化学工場へ送る。"
+  },
+  {
+    id: "eneos", name: "ENEOS大分製油所", kind: "factory", tags: "energy",
+    x: 600, y: 225,
+    materials: ["原油（オーストラリアなど）"],
+    products: ["ガソリン・軽油・灯油", "ナフサ", "石油化学製品", "電気"],
+    note: "原油からガソリン・軽油・灯油をつくり、九州のガソリンスタンドへ。ナフサは石油化学工場へ送り、電気もつくる。"
+  },
+  {
+    id: "sumika", name: "住友化学 大分工場", kind: "factory", tags: "chem",
+    x: 470, y: 420,
+    materials: ["基礎化学原料・電子材料原料（コンビナート）", "液体・粉体の化学原料"],
+    products: ["農薬", "医薬品の中間体", "タイヤ用接着剤・添加剤"],
+    note: "コンビナートから届く化学原料を使って、農薬や医薬品の中間体、タイヤ用の接着剤や添加剤などをつくり、国内外の工場へ送る。"
+  },
+  {
+    id: "oji", name: "王子マテリア", kind: "factory", tags: "paper",
+    x: 675, y: 340,
+    materials: ["古紙", "木材チップ", "パルプ"],
+    products: ["コンテナ原紙", "段ボール原紙"],
+    note: "古紙や木材チップ、パルプからコンテナ原紙・段ボール原紙をつくり、国内の段ボールメーカーへ送る。"
+  },
+  {
+    id: "kyuden", name: "九州電力 新大分発電所", kind: "factory", tags: "energy",
+    x: 840, y: 228,
+    materials: ["LNG（液化天然ガス）", "電力（九州共同発電）"],
+    products: ["電気"],
+    note: "九州でいちばん大きな火力発電所。LNGを燃料に、九州全体の電気の約3分の1をつくって九州全域へ送る。"
+  },
+  {
+    id: "oitalng", name: "大分エル・エヌ・ジー", kind: "factory", tags: "energy",
+    x: 975, y: 265,
+    materials: ["LNG（オーストラリアなど）"],
+    products: ["天然ガス"],
+    note: "海外からLNG（液化天然ガス）を船で受け入れ、九州電力の発電所やガス会社へ送り出す。日本のLNG輸入量は世界全体の約20％（2024年）。"
+  },
+  {
+    id: "mnz", name: "南日本造船", kind: "factory", tags: "ship",
+    x: 910, y: 345,
+    materials: ["鋼材・厚板（日本製鉄）"],
+    products: ["プロダクトタンカー", "バルクキャリアー", "RO-RO船"],
+    note: "日本製鉄の厚板などの鋼材から、石油を運ぶタンカーや貨物船を組み立て、世界中の海へ送り出す。"
+  },
+  {
+    id: "ozai", name: "大分港 大在コンテナターミナル", kind: "factory", tags: "port",
+    x: 845, y: 468,
+    materials: ["ガントリークレーン（三井E&S）", "さまざまな物資"],
+    products: ["国際コンテナ輸送"],
+    note: "韓国・中国・台湾・神戸との航路がある大分港のコンテナ拠点。国際コンテナ船とトラック輸送をつなぐ。"
+  },
+  {
+    id: "mitsui", name: "三井E&S", kind: "factory", tags: "machine",
+    x: 975, y: 495,
+    materials: ["鋼材・厚板（日本製鉄）", "機械パーツ"],
+    products: ["コンテナ運搬用クレーン（国内シェア約7割）"],
+    note: "鋼材や機械パーツから、コンテナ船の荷役に使うガントリークレーンを組み立て、世界中の港へ出荷する。"
+  },
+  {
+    id: "nishidensen", name: "西日本電線", kind: "factory", tags: "machine",
+    x: 185, y: 460,
+    materials: ["銅", "アルミニウム", "プラスチック"],
+    products: ["電線・ケーブル", "ゴム・合成樹脂製品"],
+    note: "銅やアルミニウムなどから電線・ケーブルやゴム・合成樹脂製品をつくり、九州各地へ送る。"
+  },
+  {
+    id: "oitaseishi", name: "大分製紙", kind: "factory", tags: "paper",
+    x: 430, y: 520,
+    materials: ["バージンパルプ", "古紙"],
+    products: ["トイレットペーパー", "キッチンペーパー"],
+    note: "バージンパルプや古紙からトイレットペーパーやキッチンペーパーをつくり、全国のスーパーやドラッグストアへ送る。"
+  },
+
+  /* ---------- 世界から入ってくる（原料） ---------- */
+  { id: "imp_brazil",     name: "ブラジル",                 kind: "world", x: 52,   y: 175 },
+  { id: "imp_au_coal",    name: "オーストラリア",           kind: "world", x: 52,   y: 295 },
+  { id: "imp_metal",      name: "世界中（金属・樹脂）",     kind: "world", x: 52,   y: 505 },
+  { id: "imp_oil",        name: "オーストラリアなど",       kind: "world", x: 625,  y: 52  },
+  { id: "imp_lng",        name: "オーストラリアなど（LNG）", kind: "world", x: 965,  y: 52  },
+  { id: "imp_scrap_wood", name: "国内・世界中（古紙・木材）", kind: "world", x: 820,  y: 688 },
+  { id: "imp_scrap2",     name: "九州各地（古紙）",         kind: "world", x: 255,  y: 688 },
+
+  /* ---------- ここから出ていく（製品・電気・ガス） ---------- */
+  { id: "dst_national",   name: "全国（自動車・建材）",         kind: "dest", x: 52,   y: 400 },
+  { id: "dst_gs",         name: "九州のガソリンスタンド",       kind: "dest", x: 430,  y: 52  },
+  { id: "dst_power",      name: "九州全域",                     kind: "dest", x: 790,  y: 52  },
+  { id: "dst_gas",        name: "ガス会社",                     kind: "dest", x: 1228, y: 198 },
+  { id: "dst_ships",      name: "世界中の海",                   kind: "dest", x: 1228, y: 330 },
+  { id: "dst_cranes",     name: "世界中の港湾",                 kind: "dest", x: 1228, y: 455 },
+  { id: "dst_kyushu_wire", name: "九州各地",                    kind: "dest", x: 110,  y: 688 },
+  { id: "dst_stores",     name: "全国のスーパー・ドラッグストア", kind: "dest", x: 390,  y: 688 },
+  { id: "dst_factories",  name: "国内外の工場",                 kind: "dest", x: 525,  y: 688 },
+  { id: "dst_cardboard",  name: "国内の段ボールメーカー",       kind: "dest", x: 665,  y: 688 },
+  { id: "dst_containers", name: "韓国・中国・台湾・神戸",       kind: "dest", x: 1055, y: 688 }
+];
+
+const FLOWS = [
+  /* 原料の輸入（青） */
+  { from: "imp_brazil",     to: "nissetsu",    label: "鉄鉱石",             kind: "import" },
+  { from: "imp_au_coal",    to: "nissetsu",    label: "石炭",               kind: "import" },
+  { from: "imp_au_coal",    to: "kkh",         label: "石炭",               kind: "import" },
+  { from: "imp_oil",        to: "eneos",       label: "原油",               kind: "import" },
+  { from: "imp_lng",        to: "oitalng",     label: "液化天然ガス",       kind: "import" },
+  { from: "imp_metal",      to: "nishidensen", label: "銅・アルミ・プラスチック", kind: "import" },
+  { from: "imp_scrap_wood", to: "oji",         label: "古紙・木材チップ",   kind: "import" },
+  { from: "imp_scrap2",     to: "oitaseishi",  label: "古紙",               kind: "import" },
+
+  /* 工場どうしのやり取り（赤） */
+  { from: "nissetsu", to: "kkh",    label: "副生ガス・残重油",       kind: "exchange" },
+  { from: "nissetsu", to: "mnz",    label: "厚板（造船用）",         kind: "exchange" },
+  { from: "nissetsu", to: "mitsui", label: "鋼材・厚板",             kind: "exchange" },
+  { from: "eneos",    to: "showa",  label: "ナフサ",                 kind: "exchange" },
+  { from: "showa",    to: "sumika", label: "基礎化学原料・電子材料原料", kind: "exchange" },
+  { from: "oitalng",  to: "kyuden", label: "天然ガス",               kind: "exchange" },
+  { from: "mitsui",   to: "ozai",   label: "ガントリークレーン",     kind: "exchange" },
+
+  /* 電気・ガス（黄） */
+  { from: "kkh",     to: "nissetsu",  label: "電力",           kind: "energy" },
+  { from: "kkh",     to: "kyuden",    label: "電力",           kind: "energy" },
+  { from: "oitalng", to: "dst_gas",   label: "天然ガス",       kind: "energy" },
+  { from: "kyuden",  to: "dst_power", label: "電気（九州全域）", kind: "energy" },
+  { from: "eneos",   to: "dst_power", label: "電気",           kind: "energy" },
+
+  /* 製品の出荷（緑） */
+  { from: "nissetsu",    to: "dst_national",   label: "鋼板（自動車・建材）",     kind: "product" },
+  { from: "eneos",       to: "dst_gs",         label: "ガソリン・軽油・灯油",     kind: "product" },
+  { from: "sumika",      to: "dst_factories",  label: "農薬・医薬中間体ほか",     kind: "product" },
+  { from: "oji",         to: "dst_cardboard",  label: "コンテナ原紙・段ボール原紙", kind: "product" },
+  { from: "mnz",         to: "dst_ships",      label: "タンカー・貨物船",         kind: "product" },
+  { from: "mitsui",      to: "dst_cranes",     label: "コンテナ運搬用クレーン",   kind: "product" },
+  { from: "ozai",        to: "dst_containers", label: "国際コンテナ輸送",         kind: "product" },
+  { from: "nishidensen", to: "dst_kyushu_wire", label: "電線・ケーブル",          kind: "product" },
+  { from: "oitaseishi",  to: "dst_stores",     label: "トイレットペーパーほか",   kind: "product" }
+];
+
+const FLOW_KINDS = {
+  import:   { label: "原料の輸入",        color: "#2f6f92" },
+  exchange: { label: "工場どうしのやり取り", color: "#c15b3c" },
+  energy:   { label: "電気・ガス",         color: "#d29a2b" },
+  product:  { label: "製品の出荷",         color: "#5f7d43" }
+};
+
+/* 手書き地図のことば（ヘッダー・フッターで使用） */
+const STORY = {
+  school: "東大分小学校 5年",
+  title1: "世界と大分がつながる",
+  title2: "工場・港 大調査地図",
+  trigger: "去年しらべた家の近くの工業地域で、何が作られているのか、それらがどこへいくのかが気になったので調べてみました。",
+  port: "大分港は、輸出では鋼材・非金属鉱物・化学製品など、輸入では鉄鉱石・石炭・原油などを主に取りあつかっています。取扱貨物量は全国11位、九州では北九州港に次いで2位です（いずれも令和4年）。",
+  summary: "調べる前は、大分の工場はそれぞれ別に製品をつくっていると思っていました。でも調べてみると、近くの工場どうしで原料や製品、電気、ガスなどをやり取りしていることが分かりました。工場に近づくと、たくさんの船やトラックが出入りしているのが見えました。大きな港や道路があって、多くの工場が集まってコンビナートとして発展したのだなと思いました。身近にある大分の工場が、世界の人々の生活を支えていることを知って、すごいと思いました。"
+};
+
+
+/* =============================================================================
+   大分臨海工業地帯マップ  ―  描画とうごき
+   ========================================================================== */
+(function () {
+  "use strict";
+
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("map");
+  const layerLand = document.getElementById("layer-land");
+  const layerFlows = document.getElementById("layer-flows");
+  const layerParticles = document.getElementById("layer-particles");
+  const layerNodes = document.getElementById("layer-nodes");
+  const defs = svg.querySelector("defs");
+
+  const VB_W = 1280, VB_H = 720;
+  const CENTER = { x: 640, y: 360 };
+
+  const nodeById = {};
+  NODES.forEach(n => { nodeById[n.id] = n; });
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- 小さなヘルパー ---------- */
+  function el(name, attrs) {
+    const e = document.createElementNS(SVGNS, name);
+    if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function wrapLabel(str, max) {
+    if (str.length <= max) return [str];
+    const delims = ["・", "（", "／", "、"];
+    let best = -1;
+    for (let i = 1; i < str.length - 1; i++) {
+      if (delims.includes(str[i])) {
+        const pos = str[i] === "（" ? i : i + 1;
+        if (best < 0 || Math.abs(pos - str.length / 2) < Math.abs(best - str.length / 2)) best = pos;
+      }
+    }
+    if (best < 1 || best >= str.length) best = Math.ceil(str.length / 2);
+    const a = str.slice(0, best), b = str.slice(best);
+    if (b.length > max) return [a].concat(wrapLabel(b, max));
+    return [a, b];
+  }
+
+  /* ---------- ものがたりのことば ---------- */
+  document.getElementById("school").textContent = STORY.school;
+  document.getElementById("trigger").textContent = STORY.trigger;
+  document.getElementById("port").textContent = STORY.port;
+  document.getElementById("summary").textContent = STORY.summary;
+
+  /* ---------- 凡例（フィルター） ---------- */
+  const kindsOn = new Set(Object.keys(FLOW_KINDS));
+  const legend = document.getElementById("legend");
+  Object.entries(FLOW_KINDS).forEach(([kind, info]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.kind = kind;
+    b.style.color = info.color;
+    b.classList.add("on");
+    b.innerHTML = `<span class="swatch"></span><span>${info.label}</span>`;
+    b.addEventListener("click", () => {
+      if (kindsOn.has(kind)) { kindsOn.delete(kind); b.classList.remove("on"); b.classList.add("dim"); }
+      else { kindsOn.add(kind); b.classList.add("on"); b.classList.remove("dim"); }
+      applyState();
+    });
+    legend.appendChild(b);
+  });
+
+  /* ---------- 陸・海・道路 ---------- */
+  (function drawLand() {
+    const land = el("path", {
+      class: "land",
+      d: "M 150 168 Q 118 120 300 122 Q 620 110 985 126 Q 1100 130 1086 234 " +
+         "Q 1104 388 1072 512 Q 1082 590 870 578 Q 500 588 275 572 " +
+         "Q 104 578 126 408 Q 114 258 150 168 Z"
+    });
+    layerLand.appendChild(land);
+
+    ["M 612 122 Q 660 224 574 300 Q 520 356 636 414",
+     "M 1086 350 Q 916 374 852 424",
+     "M 150 272 Q 270 268 320 212",
+     "M 470 574 Q 466 512 500 476"
+    ].forEach(d => layerLand.appendChild(el("path", { class: "sea-line", d })));
+
+    const road = "M 120 402 Q 460 372 780 400 Q 980 420 1084 442";
+    layerLand.appendChild(el("path", { class: "road", d: road }));
+    layerLand.appendChild(el("path", { class: "road-dash", d: road }));
+    ["M 265 372 Q 260 388 266 400",
+     "M 470 400 Q 470 392 470 384",
+     "M 675 372 Q 675 388 672 400",
+     "M 845 404 Q 845 430 845 452",
+     "M 430 452 Q 430 430 432 412"
+    ].forEach(d => {
+      layerLand.appendChild(el("path", { class: "road", d }));
+      layerLand.appendChild(el("path", { class: "road-dash", d }));
+    });
+  })();
+
+  /* ---------- 矢印マーカー ---------- */
+  Object.entries(FLOW_KINDS).forEach(([kind, info]) => {
+    const m = el("marker", {
+      id: "arrow-" + kind, viewBox: "0 0 10 10", refX: "8", refY: "5",
+      markerWidth: "6", markerHeight: "6", orient: "auto-start-reverse"
+    });
+    m.appendChild(el("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: info.color }));
+    defs.appendChild(m);
+  });
+
+  /* ---------- 流れ（パス） ---------- */
+  function trimmedEnds(a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len;
+    const ra = a.kind === "factory" ? 40 : 30;
+    const rb = b.kind === "factory" ? 40 : 30;
+    return {
+      x1: a.x + ux * ra, y1: a.y + uy * ra,
+      x2: b.x - ux * rb, y2: b.y - uy * rb
+    };
+  }
+  function flowPath(a, b) {
+    const p = trimmedEnds(a, b);
+    const mx = (p.x1 + p.x2) / 2, my = (p.y1 + p.y2) / 2;
+    const dx = p.x2 - p.x1, dy = p.y2 - p.y1;
+    const len = Math.hypot(dx, dy) || 1;
+    let nx = -dy / len, ny = dx / len;
+    if ((mx - CENTER.x) * nx + (my - CENTER.y) * ny < 0) { nx = -nx; ny = -ny; }
+    const bow = Math.min(85, len * 0.16);
+    return { d: `M ${p.x1} ${p.y1} Q ${mx + nx * bow} ${my + ny * bow} ${p.x2} ${p.y2}`, len };
+  }
+
+  const flowItems = [];
+  FLOWS.forEach((f, i) => {
+    const a = nodeById[f.from], b = nodeById[f.to];
+    if (!a || !b) { console.warn("流れの相手が見つかりません:", f); return; }
+    const geo = flowPath(a, b);
+    const path = el("path", {
+      class: "flow k-" + f.kind,
+      d: geo.d,
+      "marker-end": `url(#arrow-${f.kind})`
+    });
+    path.style.animationDelay = (-i * 0.13) + "s";
+    layerFlows.appendChild(path);
+
+    const label = el("text", { class: "flow-label" });
+    label.textContent = f.label;
+    const mid = path.getPointAtLength(geo.len * 0.5);
+    label.setAttribute("x", mid.x);
+    label.setAttribute("y", mid.y - 6);
+    label.setAttribute("text-anchor", "middle");
+    layerFlows.appendChild(label);
+
+    flowItems.push({ data: f, path, label, from: f.from, to: f.to });
+  });
+
+  /* ---------- ノード（ふせん） ---------- */
+  const nodeEls = {};
+  NODES.forEach(n => {
+    const isFactory = n.kind === "factory";
+    const fs = isFactory ? 17 : 15;
+    const maxChars = isFactory ? 9 : 8;
+    const lines = wrapLabel(n.name, maxChars).slice(0, 3);
+    const maxLen = Math.max.apply(null, lines.map(l => l.length));
+    const w = clamp(maxLen * fs * 1.02 + 22, 64, 240);
+    const lh = fs * 1.5;
+    const h = lines.length * lh + 14;
+
+    const cx = clamp(n.x, w / 2 + 4, VB_W - w / 2 - 4);
+    const cy = clamp(n.y, h / 2 + 6, VB_H - h / 2 - 6);
+
+    const g = el("g", { class: `node ${n.kind} t-${n.tags || "none"}`, tabindex: "0", role: "button" });
+    g.setAttribute("aria-label", n.name);
+    g.setAttribute("transform", `translate(${cx} ${cy})`);
+    const rot = ((n.id.charCodeAt(0) + n.id.length) % 5 - 2) * 0.9;
+
+    const inner = el("g", { transform: `rotate(${isFactory ? rot : 0})` });
+
+    if (isFactory) {
+      inner.appendChild(el("rect", {
+        class: "chip-tab", x: -w / 2 + 12, y: -h / 2 - 5, width: w - 24, height: 8, rx: 2
+      }));
+    }
+    inner.appendChild(el("rect", {
+      class: "chip", x: -w / 2, y: -h / 2, width: w, height: h, rx: 8
+    }));
+    if (isFactory) {
+      inner.appendChild(el("circle", { class: "dot", cx: -w / 2 + 12, cy: -h / 2 + 12, r: 4 }));
+    }
+    const text = el("text", {});
+    const startY = -((lines.length - 1) * lh) / 2;
+    lines.forEach((ln, idx) => {
+      const t = el("tspan", { x: 0, y: startY + idx * lh });
+      t.textContent = ln;
+      text.appendChild(t);
+    });
+    text.setAttribute("font-size", fs);
+    inner.appendChild(text);
+    g.appendChild(inner);
+    layerNodes.appendChild(g);
+
+    nodeEls[n.id] = g;
+
+    g.addEventListener("mouseenter", () => hoverNode(n.id));
+    g.addEventListener("mouseleave", () => hoverNode(null));
+    g.addEventListener("focus", () => hoverNode(n.id));
+    g.addEventListener("blur", () => hoverNode(null));
+    g.addEventListener("click", e => { e.stopPropagation(); pinNode(n.id); });
+    g.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pinNode(n.id); }
+    });
+  });
+
+  /* ---------- 状態 ---------- */
+  let hovered = null;
+  let pinned = null;
+  let playAll = false;
+
+  function activeNodeId() { return pinned || hovered; }
+
+  function flowVisible(f) { return kindsOn.has(f.data.kind); }
+
+  function flowIsActive(f) {
+    if (!flowVisible(f)) return false;
+    if (playAll) return true;
+    const id = activeNodeId();
+    if (!id) return false;
+    return f.from === id || f.to === id;
+  }
+
+  function applyState() {
+    const id = activeNodeId();
+    const anyFocus = playAll || !!id;
+
+    flowItems.forEach(f => {
+      const visible = flowVisible(f);
+      f.path.classList.toggle("hidden-kind", !visible);
+      const active = flowIsActive(f);
+      f.path.classList.toggle("active", active);
+      f.path.classList.toggle("faded", visible && anyFocus && !active);
+      f.label.classList.toggle("show", active && !playAll && !!id);
+      if (active && !reduceMotion) startParticles(f); else stopParticles(f);
+    });
+
+    NODES.forEach(n => {
+      const g = nodeEls[n.id];
+      let faded = false;
+      if (id && !playAll) {
+        faded = n.id !== id && !flowItems.some(f =>
+          flowVisible(f) && (f.from === id && f.to === n.id || f.to === id && f.from === n.id));
+      }
+      g.classList.toggle("faded", faded);
+      g.classList.toggle("active", n.id === id);
+    });
+
+    updateCard(id);
+    document.getElementById("playAll").setAttribute("aria-pressed", String(playAll));
+  }
+
+  /* ---------- ホバー / ピン ---------- */
+  function hoverNode(id) {
+    hovered = id;
+    if (!pinned) applyState();
+  }
+  function pinNode(id) {
+    pinned = (pinned === id) ? null : id;
+    hovered = pinned ? id : hovered;
+    applyState();
+  }
+  svg.addEventListener("click", () => { if (pinned) { pinned = null; applyState(); } });
+
+  document.getElementById("playAll").addEventListener("click", () => {
+    playAll = !playAll;
+    if (playAll) { pinned = null; hovered = null; }
+    applyState();
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    playAll = false; pinned = null; hovered = null;
+    kindsOn.clear(); Object.keys(FLOW_KINDS).forEach(k => kindsOn.add(k));
+    legend.querySelectorAll("button").forEach(b => { b.classList.add("on"); b.classList.remove("dim"); });
+    applyState();
+  });
+
+  /* ---------- 情報カード ---------- */
+  const card = document.getElementById("infoCard");
+  document.getElementById("infoClose").addEventListener("click", () => { pinned = null; hovered = null; applyState(); });
+
+  function updateCard(id) {
+    if (!id || playAll) { card.classList.add("is-empty"); return; }
+    const n = nodeById[id];
+    card.classList.remove("is-empty");
+    document.getElementById("infoName").textContent = n.name;
+
+    const outs = flowItems.filter(f => f.from === id && flowVisible(f));
+    const ins = flowItems.filter(f => f.to === id && flowVisible(f));
+
+    let note = n.note;
+    if (!note) {
+      const bits = [];
+      if (ins.length) bits.push(ins.map(f => f.data.label).join("・") + " が入ってくる");
+      if (outs.length) bits.push(outs.map(f => f.data.label).join("・") + " が出ていく");
+      note = bits.join("／");
+    }
+    document.getElementById("infoNote").textContent = note;
+
+    fillList("infoMaterials", n.materials);
+    fillList("infoProducts", n.products);
+
+    const conn = document.getElementById("infoConnections");
+    conn.innerHTML = "";
+    ins.forEach(f => addConn(conn, "← ", nodeById[f.from].name, f.data.label));
+    outs.forEach(f => addConn(conn, "→ ", nodeById[f.to].name, f.data.label));
+    if (!ins.length && !outs.length) {
+      const li = document.createElement("li");
+      li.textContent = "（表示中の流れはありません）";
+      conn.appendChild(li);
+    }
+  }
+  function fillList(elId, arr) {
+    const ul = document.getElementById(elId);
+    ul.innerHTML = "";
+    if (!arr || !arr.length) {
+      const li = document.createElement("li");
+      li.textContent = "―";
+      li.style.opacity = ".55";
+      ul.appendChild(li);
+      return;
+    }
+    arr.forEach(x => {
+      const li = document.createElement("li");
+      li.textContent = x;
+      ul.appendChild(li);
+    });
+  }
+  function addConn(ul, arrow, name, label) {
+    const li = document.createElement("li");
+    li.style.listStyle = "none";
+    li.style.marginLeft = "-1.1em";
+    li.textContent = `${arrow}${name}　${label}`;
+    ul.appendChild(li);
+  }
+
+  /* ---------- 粒子アニメーション ---------- */
+  const running = new Map(); // flowItem -> { len, parts:[{d, el}], speed }
+  function startParticles(f) {
+    if (running.has(f)) return;
+    const len = f.path.getTotalLength();
+    const count = clamp(Math.round(len / 130), 2, 6);
+    const parts = [];
+    for (let i = 0; i < count; i++) {
+      const c = el("circle", { class: "particle", r: 3.6, fill: FLOW_KINDS[f.data.kind].color });
+      layerParticles.appendChild(c);
+      parts.push({ d: (len / count) * i, el: c });
+    }
+    running.set(f, { len, parts, speed: 95 });
+    if (!rafId) rafId = requestAnimationFrame(tick);
+  }
+  function stopParticles(f) {
+    const r = running.get(f);
+    if (!r) return;
+    r.parts.forEach(p => p.el.remove());
+    running.delete(f);
+  }
+  let rafId = null, lastT = 0;
+  function tick(t) {
+    const dt = lastT ? Math.min((t - lastT) / 1000, 0.05) : 0;
+    lastT = t;
+    running.forEach((r, f) => {
+      for (const p of r.parts) {
+        p.d += r.speed * dt;
+        if (p.d > r.len) p.d -= r.len;
+        const pt = f.path.getPointAtLength(p.d);
+        p.el.setAttribute("cx", pt.x);
+        p.el.setAttribute("cy", pt.y);
+      }
+    });
+    if (running.size) { rafId = requestAnimationFrame(tick); }
+    else { rafId = null; lastT = 0; }
+  }
+
+  /* ---------- スタート ---------- */
+  applyState();
+})();
+
+</script>
+</body>
+</html>
