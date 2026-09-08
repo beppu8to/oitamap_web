@@ -747,7 +747,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
     <div class="toggles">
       <button type="button" id="playAll" class="btn" aria-pressed="false">▶ ぜんぶ動かす</button>
       <button type="button" id="reset" class="btn btn-ghost">↺ もどす</button>
-      <button type="button" id="editPos" class="btn btn-ghost" aria-pressed="false">📍 位置をなおす</button>
+      <button type="button" id="editPos" class="btn btn-ghost" aria-pressed="false" hidden>📍 位置をなおす</button>
     </div>
   </section>
 
@@ -1635,6 +1635,8 @@ const PORT = {
     if (on) refreshFixText();
   }
 
+  /* URL に ?edit を付けると「位置をなおす」ボタンが出ます（再デプロイ不要） */
+  if (editBtn && /[?#&]edit\b/i.test(location.href)) editBtn.hidden = false;
   if (editBtn && Object.keys(draft).length) editBtn.textContent = "📍 位置をなおす（下書きあり）";
   if (editBtn) editBtn.addEventListener("click", () => setEditMode(!editMode));
   const editClose = document.getElementById("editClose");
