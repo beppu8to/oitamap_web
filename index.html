@@ -768,7 +768,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
         <ol class="edit-steps">
           <li>ピンを動かす（何回でもOK。この端末に下書きが残ります）</li>
           <li><button type="button" class="btn" id="editCopy">コピー</button> を押す</li>
-          <li>GitHub の <code>assets/js/data.js</code> を開き、<code>const COORD_FIX =</code> で始まる行を、コピーしたものに置きかえて Commit</li>
+          <li>GitHub で <code>coordfix.js</code> を開き、中身を<b>ぜんぶ</b>けして、コピーしたものを貼りつけて Commit</li>
         </ol>
         <textarea id="fixText" class="edit-text" readonly rows="3" aria-label="コピーする文字"></textarea>
         <button type="button" class="btn btn-ghost" id="editUndo">↩ 動かした分を元にもどす</button>
@@ -862,6 +862,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="coordfix.js"></script>
 <script>
 /* =============================================================================
    工場のイラスト（手書きふうの線画）
@@ -1028,9 +1029,7 @@ if (typeof module !== "undefined") { module.exports = { ILLUS, ILLUS_VIEWBOX }; 
                 "energy"（電気・ガス・蒸気・黄） / "product"（製品の出荷・緑）
    ========================================================================== */
 
-/* 工場の位置のなおし。地図の「📍 位置をなおす」でコピーした1行を、
-   下の行ぜんたいと置きかえてください（さわらなければ何も変わりません）。 */
-const COORD_FIX = {};
+/* 工場の位置のなおしは coordfix.js（window.COORD_FIX）で行います。 */
 
 const NODES = [
   /* ---------- 工場 ---------- */
@@ -1614,7 +1613,7 @@ const PORT = {
   function refreshFixText() {
     const obj = {};
     FCT.forEach(n => { obj[n.id] = [round6(n.lat), round6(n.lng)]; });
-    if (fixText) fixText.value = "const COORD_FIX = " + JSON.stringify(obj) + ";";
+    if (fixText) fixText.value = "window.COORD_FIX = " + JSON.stringify(obj) + ";";
     const moved = FCT.filter(n => {
       const d = dataCoord[n.id];
       return Math.abs(n.lat - d[0]) > 1e-5 || Math.abs(n.lng - d[1]) > 1e-5;
