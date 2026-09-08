@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Yomogi&family=Zen+Kurenaido&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 /* =============================================================================
    大分臨海工業地帯マップ  ―  スタイル
@@ -243,210 +244,132 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   margin: 14px 2px 0;
 }
 
-/* ---------------- 地図 ---------------- */
+/* ---------------- 地図（Leaflet） ---------------- */
 .map-wrap {
   position: relative;
   margin-top: 8px;
   border: 3px solid var(--ink);
   border-radius: 14px;
-  background:
-    radial-gradient(80% 40% at 50% 12%, color-mix(in srgb, var(--sea) 40%, transparent), transparent 60%),
-    var(--paper-hi);
   box-shadow: 4px 6px 0 var(--shadow);
   overflow: hidden;
+  background: var(--paper-lo);
 }
-
 .map-stage { position: relative; }
-.map-stage::before {
-  content: "";
+
+#map {
+  height: clamp(440px, 66vh, 680px);
+  width: 100%;
+  background: var(--paper-lo);
+  font: inherit;
+  z-index: 0;
+}
+.leaflet-container { font-family: inherit; background: var(--paper-lo); }
+.leaflet-container a { color: var(--c-import); }
+.leaflet-bar a, .leaflet-bar a:hover { background: var(--card-bg); color: var(--ink); border-bottom-color: color-mix(in srgb, var(--ink) 25%, transparent); }
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent) !important;
+  font-size: 10px; color: var(--ink-soft);
+}
+/* 航空写真のときは少し落ち着いた色みに */
+#map.is-sat .leaflet-tile { filter: saturate(.92) contrast(1.03) brightness(.99); }
+
+/* 航空写真／地図 切りかえ */
+.base-toggle {
   position: absolute;
-  inset: 7px;
-  border: 1.5px dashed color-mix(in srgb, var(--ink) 45%, transparent);
-  border-radius: 8px;
-  pointer-events: none;
-  z-index: 2;
+  top: 10px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--card-bg);
+  box-shadow: 2px 2px 0 var(--shadow);
 }
-
-#map { display: block; width: 100%; height: auto; touch-action: manipulation; position: relative; z-index: 1; }
-
-/* 陸・海・川 */
-.land {
-  fill: var(--land);
-  stroke: var(--ink);
-  stroke-width: 2.2;
-  filter: url(#rough);
-}
-.sea {
-  fill: var(--sea);
-  stroke: color-mix(in srgb, var(--ink) 45%, transparent);
-  stroke-width: 2;
-  filter: url(#rough);
-}
-.river {
-  fill: var(--river);
-  stroke: color-mix(in srgb, var(--ink) 30%, transparent);
-  stroke-width: 1.5;
-  filter: url(#roughSoft);
-}
-.road {
-  fill: none;
-  stroke: color-mix(in srgb, var(--ink) 55%, transparent);
-  stroke-width: 6;
-  stroke-linecap: round;
-  filter: url(#roughSoft);
-  opacity: .5;
-}
-.road-dash {
-  fill: none;
-  stroke: var(--paper-hi);
-  stroke-width: 1.6;
-  stroke-dasharray: 6 8;
-}
-/* JR日豊本線 */
-.rail-bed {
-  fill: none;
-  stroke: color-mix(in srgb, var(--ink) 72%, transparent);
-  stroke-width: 3.4;
-}
-.rail-tie {
-  fill: none;
-  stroke: color-mix(in srgb, var(--ink) 72%, transparent);
-  stroke-width: 9;
-  stroke-dasharray: 2.5 8.5;
-}
-.station {
-  fill: var(--card-bg);
-  stroke: var(--ink);
-  stroke-width: 2;
-}
-.station-label {
+.base-toggle button {
   font-family: "Yomogi", cursive;
-  font-size: 15px;
-  fill: var(--ink);
-  paint-order: stroke;
-  stroke: var(--paper-hi);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-  pointer-events: none;
+  font-size: .85rem;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  padding: 5px 16px;
+  cursor: pointer;
 }
-.geo-district {
-  font-family: "Yomogi", cursive;
-  font-size: 15px;
-  fill: color-mix(in srgb, var(--ink) 48%, transparent);
-  text-anchor: middle;
-  letter-spacing: .06em;
-  pointer-events: none;
-}
-.geo-label {
-  font-family: "Yomogi", cursive;
-  fill: color-mix(in srgb, var(--ink) 62%, transparent);
-  font-size: 14px;
-  font-style: italic;
-  pointer-events: none;
-}
-.geo-sea {
-  font-family: "Kaisei Decol", serif;
-  fill: color-mix(in srgb, var(--ink) 42%, transparent);
-  font-size: 24px;
-  letter-spacing: .12em;
-  pointer-events: none;
-}
+.base-toggle button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 
-/* 流れ（矢印） */
-.flow {
-  fill: none;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  opacity: .16;
-  transition: opacity .25s, stroke-width .25s;
-  stroke-dasharray: 7 6;
-  animation: drift 3s linear infinite;
+/* 工場マーカー */
+.fm { --cat: var(--cat-other); }
+.fm.cat-metal  { --cat: var(--cat-metal); }
+.fm.cat-chem   { --cat: var(--cat-chem); }
+.fm.cat-energy { --cat: var(--cat-energy); }
+.fm.cat-other  { --cat: var(--cat-other); }
+.fm .fm-dot {
+  position: absolute;
+  left: 0; top: 0;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--cat);
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,.55);
+  transition: width .12s, height .12s, left .12s, top .12s;
 }
-.flow.k-import   { stroke: var(--c-import); }
-.flow.k-exchange { stroke: var(--c-exchange); }
-.flow.k-energy   { stroke: var(--c-energy); }
-.flow.k-product  { stroke: var(--c-product); }
-
-.flow.active {
-  opacity: 1;
-  stroke-width: 4;
-  animation: drift 1s linear infinite;
-  filter: drop-shadow(0 0 4px currentColor);
-}
-.flow.faded { opacity: .08; }
-.flow.hidden-kind { display: none; }
-
-@keyframes drift { to { stroke-dashoffset: -26; } }
-
-.flow-label {
-  font-family: "Yomogi", cursive;
-  font-size: 13px;
-  fill: var(--ink);
-  paint-order: stroke;
-  stroke: var(--card-bg);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-  opacity: 0;
-  transition: opacity .2s;
-  pointer-events: none;
-}
-.flow-label.show { opacity: 1; }
-
-.particle { pointer-events: none; }
-
-/* ノード */
-.node { cursor: pointer; }
-.node .chip {
-  fill: var(--card-bg);
-  stroke: var(--ink);
-  stroke-width: 2;
-  filter: url(#roughSoft);
-}
-.node text {
-  font-family: "Zen Kurenaido", sans-serif;
-  fill: var(--ink);
-  text-anchor: middle;
-  dominant-baseline: middle;
-  pointer-events: none;
-}
-.node.world text, .node.dest text { font-size: 13px; }
-
-.node.world .chip  { fill: color-mix(in srgb, var(--c-import) 18%, var(--card-bg)); stroke-dasharray: 4 3; }
-.node.dest .chip   { fill: color-mix(in srgb, var(--c-product) 16%, var(--card-bg)); stroke-dasharray: 4 3; }
-
-/* 工場: 丸シール + 引き出し線 + 名前のふだ */
-.node.factory .leader {
-  fill: none;
-  stroke: var(--cat, var(--ink-soft));
-  stroke-width: 1.5;
-  opacity: .85;
-}
-.node.factory .fdot-halo { fill: var(--card-bg); stroke: none; }
-.node.factory .fdot {
-  fill: var(--cat, var(--ink-soft));
-  stroke: #fff;
-  stroke-width: 2;
-  filter: drop-shadow(1px 1px 1px var(--shadow));
-}
-.node.factory .flabel-bg {
-  fill: var(--card-bg);
-  stroke: var(--cat, var(--ink));
-  stroke-width: 2;
-  filter: url(#roughSoft);
-}
-.node.factory .flabel-text {
+.fm .fm-label {
+  position: absolute;
+  left: 20px; top: 0;
+  white-space: nowrap;
   font-family: "Zen Kurenaido", sans-serif;
   font-weight: 700;
-  fill: var(--ink);
-  dominant-baseline: central;
+  font-size: 11px;
+  line-height: 1.1;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--cat) 55%, var(--ink));
+  border-radius: 5px;
+  padding: 0 5px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,.35);
+  pointer-events: none;
 }
-.node.factory:hover .leader, .node.factory.active .leader { opacity: 1; stroke-width: 2.6; }
-.node.factory:hover .fdot, .node.factory.active .fdot { r: 8; }
-.node.factory:hover .flabel-bg, .node.factory.active .flabel-bg {
-  stroke-width: 3;
-  filter: url(#roughSoft) drop-shadow(2px 3px 3px var(--shadow));
+.fm.lbl-left .fm-label { left: auto; right: 20px; }
+#map.is-sat .fm .fm-label { background: rgba(24,20,14,.84); color: #fff; }
+.fm:hover, .fm.active { z-index: 1000 !important; }
+.fm:hover .fm-dot, .fm.active .fm-dot { width: 22px; height: 22px; left: -3px; top: -3px; }
+.fm:hover .fm-label, .fm.active .fm-label { font-size: 12.5px; box-shadow: 2px 2px 5px rgba(0,0,0,.5); }
+.fm.active .fm-label { border-color: var(--accent); border-width: 2.5px; }
+.fm.faded { opacity: .4; }
+.fm.faded .fm-label { opacity: 0; }
+
+/* 流れ（Leaflet の SVG パス） */
+.flow {
+  stroke-dasharray: 9 7;
+  stroke-linecap: round;
+  animation: drift 3.2s linear infinite;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,.75)) drop-shadow(0 0 1px rgba(0,0,0,.6));
 }
-.node.factory.active .flabel-bg { stroke: var(--accent); }
+.flow.active { animation-duration: 1s; filter: drop-shadow(0 0 3px #000) drop-shadow(0 0 5px currentColor); }
+#map:not(.is-sat) .flow { filter: drop-shadow(0 0 2px rgba(255,255,255,.9)); }
+#map:not(.is-sat) .flow.active { filter: drop-shadow(0 0 4px currentColor); }
+@keyframes drift { to { stroke-dashoffset: -32; } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+
+.flow-arrow { font-size: 15px; line-height: 1; transition: opacity .2s; }
+.flow-arrow span { display: inline-block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+.flow-arrow.active span { font-size: 19px; }
+
+/* 駅 */
+.stn span {
+  display: inline-block;
+  transform: translate(-50%, -140%);
+  white-space: nowrap;
+  font-family: "Yomogi", cursive;
+  font-size: 11px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+#map.is-sat .stn span { background: rgba(24,20,14,.8); color: #fff; }
+
 
 /* 工場のイラスト（線画） ―― 地図上とカードで共通 */
 .illus { overflow: visible; color: var(--cat-other); }
@@ -777,27 +700,15 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
     </div>
   </section>
 
-  <p class="hint" id="hint">工場のふせんにマウスを乗せる（スマホはタップ）と、その工場に出入りする原料・製品の流れが光ります。</p>
+  <p class="hint" id="hint">工場の丸じるしにマウスを乗せる（スマホはタップ）と、その工場につながる原料・製品の流れが光ります。地図はドラッグで動かせます。</p>
 
   <section class="map-wrap">
     <div class="map-stage">
-    <svg id="map" viewBox="0 0 1000 900" role="img" aria-labelledby="mapTitle">
-      <title id="mapTitle">大分臨海工業地帯 原料・製品の流れ地図</title>
-      <defs>
-        <filter id="rough" x="-20%" y="-20%" width="140%" height="140%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="7" result="n"/>
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
-        </filter>
-        <filter id="roughSoft" x="-20%" y="-20%" width="140%" height="140%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" seed="3" result="n"/>
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/>
-        </filter>
-      </defs>
-      <g id="layer-land"></g>
-      <g id="layer-flows"></g>
-      <g id="layer-particles"></g>
-      <g id="layer-nodes"></g>
-    </svg>
+      <div class="base-toggle" role="group" aria-label="地図の種類">
+        <button type="button" data-base="sat" aria-pressed="true">航空写真</button>
+        <button type="button" data-base="map" aria-pressed="false">地図</button>
+      </div>
+      <div id="map" role="application" aria-label="大分臨海工業地帯の地図"></div>
     </div>
 
     <aside class="info-card is-empty" id="infoCard">
@@ -885,6 +796,8 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   <p>自由研究「世界と大分がつながる 工場・港 大調査地図」を WEB にしたものです。</p>
   <p class="tiny">工場名・流れは手書き地図の読み取りです。工場名・流れが地図とちがうときは直せます（作者にご連絡ください）。</p>
 </footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* =============================================================================
    工場のイラスト（手書きふうの線画）
@@ -1055,7 +968,7 @@ const NODES = [
   /* ---------- 工場 ---------- */
   {
     id: "nissetsu", name: "日本製鉄（九州製鉄所 大分地区）", kind: "factory", cat: "metal", illus: "steelworks",
-    x: 296, y: 220, lx: 240, ly: 44,
+    lat: 33.2685, lng: 131.662,
     materials: ["鉄鉱石（オーストラリア・ブラジルなど）", "石炭・原料炭（オーストラリアなど）", "石灰石（津久見市などからトラックで）"],
     products: ["熱延鋼板（自動車用など）", "厚板（造船・建築用など）"],
     byproducts: ["鉄スラグ（セメント・道路の材料に）", "副生ガス・残重油（発電所の燃料に）"],
@@ -1063,28 +976,28 @@ const NODES = [
   },
   {
     id: "kkh", name: "九州共同発電（株）", kind: "factory", cat: "energy", illus: "powerplant",
-    x: 224, y: 236, lx: 100, ly: 62,
+    lat: 33.264, lng: 131.67,
     materials: ["石炭（オーストラリアなど）", "天然ガス・原油", "副生ガス・残重油（日本製鉄から）"],
     products: ["電気", "蒸気"],
     note: "火力発電所。石炭や天然ガスに加え、となりの日本製鉄から出る副生ガスや残重油も燃料にする。つくった電気と蒸気は九州電力や日本製鉄、まわりの工場へ送る。"
   },
   {
     id: "showa", name: "クラサスケミカル（株）大分工場", kind: "factory", cat: "chem", illus: "chemplant",
-    x: 500, y: 240, lx: 440, ly: 44,
+    lat: 33.2575, lng: 131.6795,
     materials: ["エチレン・プロピレン（石油化学の基礎製品）"],
     products: ["塩化ビニル樹脂（塩ビ）など"],
     note: "石油からつくられるエチレンやプロピレンを原料に、水道管やサッシ、床材などになる塩化ビニル樹脂をつくる。近くの製油所やコンビナートと配管でつながり、原料や電気・蒸気をやり取りしている。"
   },
   {
     id: "eneos", name: "ENEOS（株）大分製油所", kind: "factory", cat: "chem", illus: "refinery",
-    x: 664, y: 236, lx: 590, ly: 42,
+    lat: 33.266, lng: 131.7015,
     materials: ["原油（中東・オーストラリアなど）"],
     products: ["ガソリン・軽油・灯油", "ジェット燃料", "ナフサ・石油化学製品", "電気・蒸気"],
     note: "タンカーで運ばれる原油を蒸留して、ガソリン・軽油・灯油・ジェット燃料をつくる。ガソリンなどはタンクローリーで九州各地のガソリンスタンドへ。ナフサは近くの化学工場へ、電気や蒸気もまわりの工場へ送る。"
   },
   {
     id: "sumika", name: "住友化学（株）大分工場", kind: "factory", cat: "chem", illus: "chemplant",
-    x: 540, y: 330, lx: 470, ly: 472,
+    labelSide: "left", lat: 33.2535, lng: 131.6855,
     materials: ["ナフサなどの化学原料（ENEOS大分製油所から）"],
     products: ["農薬", "医薬品の中間体", "タイヤ用の化学薬品・添加剤"],
     byproducts: ["高純度アルミナ（電子材料などに）"],
@@ -1092,49 +1005,49 @@ const NODES = [
   },
   {
     id: "oji", name: "王子マテリア（株）大分工場", kind: "factory", cat: "other", illus: "cardboard",
-    x: 400, y: 250, lx: 340, ly: 382,
+    lat: 33.255, lng: 131.6905,
     materials: ["古紙（国内回収）", "木材チップ（国内・海外）", "パルプ"],
     products: ["コンテナ原紙", "段ボール原紙"],
     note: "古紙や木材チップをとかして、段ボールのもとになる厚い紙をつくる。製品は国内の段ボールメーカーへ送られ、荷物を運ぶ箱になる。"
   },
   {
     id: "kyuden", name: "九州電力（株）新大分発電所", kind: "factory", cat: "energy", illus: "powerplant",
-    x: 712, y: 218, lx: 706, ly: 40,
+    labelSide: "left", lat: 33.264, lng: 131.697,
     materials: ["LNG（液化天然ガス／オーストラリアなど）"],
     products: ["電気", "蒸気"],
     note: "九州でいちばん大きな火力発電所。となりの大分エル・エヌ・ジーから届くLNGを燃料に、九州全体の電気のおよそ3分の1をつくり、九州じゅうへ送る。"
   },
   {
     id: "oitalng", name: "大分エル・エヌ・ジー（株）", kind: "factory", cat: "energy", illus: "lng",
-    x: 756, y: 232, lx: 838, ly: 44,
+    labelSide: "left", lat: 33.2618, lng: 131.7035,
     materials: ["LNG（オーストラリア・中東・東南アジアなど）"],
     products: ["天然ガス（気化して送る）"],
     note: "海外からLNGタンカーで運ばれる液化天然ガス（−162℃）を大きな球形タンクにためる。使うときに温めて気体にもどし、となりの新大分発電所や都市ガス会社へパイプで送る。日本のLNG輸入量は世界全体のおよそ2割。"
   },
   {
     id: "mnz", name: "南日本造船（株）大分事業所", kind: "factory", cat: "other", illus: "shipyard",
-    x: 836, y: 262, lx: 902, ly: 360,
+    lat: 33.253, lng: 131.7335,
     materials: ["鋼材・厚板（日本製鉄など）"],
     products: ["プロダクトタンカー", "バルクキャリアー", "RO-RO船"],
     note: "日本製鉄の厚板などの鋼材から、石油を運ぶタンカーや貨物船を組み立てる。できた船は自分で海を走って、世界中の船会社へ届けられる。"
   },
   {
     id: "ozai", name: "大在コンテナターミナル（大分港）", kind: "factory", cat: "other", illus: "container",
-    x: 878, y: 232, lx: 934, ly: 66,
+    lat: 33.26, lng: 131.744,
     materials: ["国際コンテナ貨物", "RO-RO貨物（トラックごと運ぶ船）"],
     products: ["世界とつながる海上輸送"],
     note: "大分港でいちばんの物流拠点。韓国（釜山）・中国・台湾・神戸などとの航路があり、国際コンテナ船や大型RO-RO船とトラック輸送をつなぐ。キヤノンや旭化成メディカルなどの製品を、釜山や上海のハブ港を通じて世界へ送り出す。トラック運転手不足に対応する国内海上輸送の拠点にもなっている。"
   },
   {
     id: "mitsui", name: "三井E&S（株）大分工場", kind: "factory", cat: "metal", illus: "crane",
-    x: 866, y: 296, lx: 912, ly: 470,
+    labelSide: "left", lat: 33.2545, lng: 131.7485,
     materials: ["鋼材・厚板（日本製鉄など）", "機械部品・パーツ"],
     products: ["コンテナ運搬用クレーン（国内シェア約7割）", "橋"],
     note: "鋼材や機械部品から、コンテナ船の荷役に使う巨大なガントリークレーンを組み立てる。完成したクレーンは船に載せて、世界中の港へ運ばれる。"
   },
   {
     id: "nishidensen", name: "西日本電線（株）", kind: "factory", cat: "metal", illus: "cablereel",
-    x: 760, y: 604, lx: 806, ly: 662,
+    lat: 33.1955, lng: 131.698,
     materials: ["銅（チリ・南米など）", "アルミニウム（オーストラリアなど）", "プラスチック"],
     products: ["電線・ケーブル", "ゴム・合成樹脂製品"],
     byproducts: ["銅・アルミのくず（工場内でとかして再利用）"],
@@ -1142,7 +1055,7 @@ const NODES = [
   },
   {
     id: "oitaseishi", name: "大分製紙（株）", kind: "factory", cat: "other", illus: "paperrolls",
-    x: 676, y: 340, lx: 640, ly: 440,
+    lat: 33.2472, lng: 131.712,
     materials: ["古紙（国内回収）", "パルプ・木材チップ（北米・東南アジアなど）"],
     products: ["トイレットペーパー・キッチンペーパー", "紙"],
     byproducts: ["バーク（樹皮）・汚泥（ボイラーの燃料に）"],
@@ -1150,14 +1063,14 @@ const NODES = [
   },
   {
     id: "seisou", name: "大分東部清掃工場", kind: "factory", cat: "energy", illus: "incinerator",
-    x: 786, y: 320, lx: 832, ly: 430,
+    labelSide: "left", lat: 33.244, lng: 131.722,
     materials: ["ごみ（大分市など）"],
     products: ["電気", "蒸気"],
     note: "大分市などのごみを燃やし、その熱で発電する。つくった電気や蒸気は工場内やまわりの施設で使い、ごみをへらしながらエネルギーもつくっている。"
   },
   {
     id: "takada", name: "高田ネームプレート（株）", kind: "factory", cat: "other", illus: "nameplate",
-    x: 620, y: 604, lx: 548, ly: 662,
+    lat: 33.201, lng: 131.712,
     materials: ["金属材料・プラスチックなど（国内）"],
     products: ["プラスチックネームプレート", "メンバーシップカード", "RoHS対応品"],
     note: "金属やプラスチックから、機械や製品にはる名前板（ネームプレート）やカードをつくる。小さな部品だけれど、いろいろな工業製品に使われている。"
@@ -1336,49 +1249,30 @@ const PORT = {
 
 
 /* =============================================================================
-   大分臨海工業地帯マップ  ―  描画とうごき
+   大分臨海工業地帯マップ  ―  本物の地図（Leaflet）版
    ========================================================================== */
 (function () {
   "use strict";
 
-  const SVGNS = "http://www.w3.org/2000/svg";
-  const svg = document.getElementById("map");
-  const layerLand = document.getElementById("layer-land");
-  const layerFlows = document.getElementById("layer-flows");
-  const layerParticles = document.getElementById("layer-particles");
-  const layerNodes = document.getElementById("layer-nodes");
-  const defs = svg.querySelector("defs");
-
-  const VB_W = 1000, VB_H = 900;
-  const CENTER = { x: 500, y: 380 };
-
   const nodeById = {};
   NODES.forEach(n => { nodeById[n.id] = n; });
+  const FCT = NODES.filter(n => n.kind === "factory");
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- 小さなヘルパー ---------- */
-  function el(name, attrs) {
-    const e = document.createElementNS(SVGNS, name);
-    if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
-    return e;
-  }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-  function wrapLabel(str, max) {
-    if (str.length <= max) return [str];
-    const delims = ["・", "（", "／", "、", " ", "　"];
-    let best = -1;
-    for (let i = 1; i < str.length - 1; i++) {
-      if (delims.includes(str[i])) {
-        const pos = str[i] === "（" ? i : i + 1;
-        if (best < 0 || Math.abs(pos - str.length / 2) < Math.abs(best - str.length / 2)) best = pos;
-      }
-    }
-    if (best < 1 || best >= str.length) best = Math.ceil(str.length / 2);
-    const a = str.slice(0, best), b = str.slice(best);
-    if (b.length > max) return [a].concat(wrapLabel(b, max));
-    return [a, b];
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
+  function shortName(name) {
+    return (name || "")
+      .replace(/（株）/g, "")
+      .replace(/（九州製鉄所 大分地区）/g, "")
+      .replace(/（大分港）/g, "")
+      .replace(/^九州電力\s*/g, "")
+      .replace(/\s*大分工場$/g, "")
+      .replace(/\s*大分事業所$/g, "");
   }
 
   /* ---------- ものがたりのことば ---------- */
@@ -1414,247 +1308,128 @@ const PORT = {
     legend.appendChild(b);
   });
 
-  /* ---------- 陸・海・川・鉄道・道路（大分臨海工業地帯の地形） ----------
-     viewBox 1000 x 1180。別府湾は北（上）。工業地帯は東西にのびるが、
-     模造紙より横幅がとれないので南北方向にのばしてデフォルメしている。       */
-  (function drawLand() {
-    function add(cls, d, attrs) {
-      const p = el("path", Object.assign({ class: cls, d: d }, attrs || {}));
-      layerLand.appendChild(p);
-      return p;
-    }
-    function label(cls, x, y, text, rot) {
-      const t = el("text", { class: cls, x: x, y: y, "text-anchor": "middle" });
-      if (rot) t.setAttribute("transform", `rotate(${rot} ${x} ${y})`);
-      t.textContent = text;
-      layerLand.appendChild(t);
-    }
-
-    /* 陸地（海岸線より下ぜんぶ） */
-    add("land",
-      "M 78 130 L 922 130 Q 942 130 938 196 L 938 656 Q 938 704 866 698 " +
-      "L 150 700 Q 74 704 80 644 L 80 196 Q 76 130 78 130 Z");
-
-    /* 別府湾（海）: 下辺が海岸線。5つの埋め立てブロックと、その間の水路（大野川・乙津川の河口） */
-    add("sea",
-      "M 8 6 L 992 6 L 992 250 " +
-      "L 912 250 L 912 206 L 820 206 L 820 250 " +                     /* 大在ブロック */
-      "L 812 274 L 802 274 L 796 250 L 796 178 L 628 178 L 628 250 " + /* 青崎の入江 + 三佐・家島ブロック */
-      "L 618 276 L 608 276 L 600 250 L 594 250 L 594 204 L 448 204 L 448 250 " + /* 乙津川口 + 鶴崎・乙津ブロック */
-      "L 438 280 L 428 280 L 418 250 L 412 250 L 412 162 L 196 162 L 196 250 " + /* 大野川口 + 日本製鉄ブロック */
-      "L 176 250 L 176 244 L 100 244 L 100 250 " +                     /* 西大分港 */
-      "L 40 248 L 8 248 Z");
-
-    /* 大野川・乙津川（河口の三角州が工業地帯を分けている） */
-    add("river", "M 352 700 Q 378 540 400 392 Q 414 316 426 276 L 446 276 " +
-      "Q 436 320 420 394 Q 398 542 374 700 Z");
-    add("river", "M 418 448 Q 500 360 584 280 L 604 280 Q 520 366 446 448 Z");
-
-    /* JR日豊本線（内陸を東西にはしる）＋ 駅 */
-    const railD = "M 34 520 Q 200 548 430 556 Q 690 548 972 500";
-    add("rail-bed", railD);
-    add("rail-tie", railD);
-    const stations = [
-      [92, 526, "大分駅"], [252, 550, "牧駅"], [372, 554, "高城駅"],
-      [500, 554, "鶴崎駅"], [742, 530, "大在駅"], [928, 504, "坂ノ市駅"]
-    ];
-    stations.forEach(([sx, sy, nm]) => {
-      layerLand.appendChild(el("rect", { class: "station", x: sx - 5, y: sy - 5, width: 10, height: 10, rx: 1.5 }));
-      const t = el("text", { class: "station-label", x: sx, y: sy + 20, "text-anchor": "middle" });
-      t.textContent = nm;
-      layerLand.appendChild(t);
-    });
-
-    /* 幹線道路 */
-    const r197 = "M 54 408 Q 460 430 946 384";
-    add("road", r197); add("road-dash", r197);
-    const r10 = "M 54 620 Q 480 640 946 592";
-    add("road", r10); add("road-dash", r10);
-    ["M 290 408 L 290 254", "M 520 408 L 520 254",
-     "M 712 406 L 712 254", "M 866 402 L 866 252",
-     "M 656 430 L 656 520", "M 748 548 L 748 656"
-    ].forEach(d => { add("road", d); add("road-dash", d); });
-
-    label("geo-sea", 486, 202, "別 府 湾");
-    label("geo-label", 150, 92, "← 世界へ（海路）");
-    label("geo-label", 336, 448, "大野川", -76);
-    label("geo-label", 452, 372, "乙津川", -46);
-    label("geo-label", 150, 388, "国道197号", 0);
-    label("geo-label", 150, 598, "国道10号", 0);
-    label("geo-district", 288, 300, "日吉原");
-    label("geo-district", 556, 322, "鶴崎・乙津");
-    label("geo-district", 704, 300, "三佐・家島");
-    label("geo-district", 866, 300, "大在");
-    label("geo-district", 686, 644, "松岡（内陸）");
-  })();
-
-  /* ---------- 矢印マーカー ---------- */
-  Object.entries(FLOW_KINDS).forEach(([kind, info]) => {
-    const m = el("marker", {
-      id: "arrow-" + kind, viewBox: "0 0 10 10", refX: "8", refY: "5",
-      markerWidth: "6", markerHeight: "6", orient: "auto-start-reverse"
-    });
-    m.appendChild(el("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: info.color }));
-    defs.appendChild(m);
+  /* ---------- 地図（Leaflet） ---------- */
+  const mapEl = document.getElementById("map");
+  const map = L.map(mapEl, {
+    zoomControl: true,
+    scrollWheelZoom: true,
+    attributionControl: true
   });
+  map.attributionControl.setPrefix("");
 
-  /* ---------- 流れ（パス） ---------- */
-  function trimmedEnds(a, b) {
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const ux = dx / len, uy = dy / len;
-    const ra = a.kind === "factory" ? 12 : 30;
-    const rb = b.kind === "factory" ? 12 : 30;
-    return {
-      x1: a.x + ux * ra, y1: a.y + uy * ra,
-      x2: b.x - ux * rb, y2: b.y - uy * rb
-    };
-  }
-  function flowPath(a, b) {
-    const p = trimmedEnds(a, b);
-    const mx = (p.x1 + p.x2) / 2, my = (p.y1 + p.y2) / 2;
-    const dx = p.x2 - p.x1, dy = p.y2 - p.y1;
-    const len = Math.hypot(dx, dy) || 1;
-    let nx = -dy / len, ny = dx / len;
-    if ((mx - CENTER.x) * nx + (my - CENTER.y) * ny < 0) { nx = -nx; ny = -ny; }
-    const bow = Math.min(85, len * 0.16);
-    return { d: `M ${p.x1} ${p.y1} Q ${mx + nx * bow} ${my + ny * bow} ${p.x2} ${p.y2}`, len };
-  }
+  const layerSat = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 19, attribution: "航空写真 &copy; Esri, Maxar など" });
+  const layerSatRef = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 19 });
+  const layerOsm = L.tileLayer(
+    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" });
 
-  const flowItems = [];
-  FLOWS.forEach((f, i) => {
-    const a = nodeById[f.from], b = nodeById[f.to];
-    if (!a || !b) { console.warn("流れの相手が見つかりません:", f); return; }
-    const geo = flowPath(a, b);
-    const path = el("path", {
-      class: "flow k-" + f.kind,
-      d: geo.d,
-      "marker-end": `url(#arrow-${f.kind})`
-    });
-    path.style.animationDelay = (-i * 0.13) + "s";
-    layerFlows.appendChild(path);
-
-    const label = el("text", { class: "flow-label" });
-    label.textContent = f.label;
-    const mid = path.getPointAtLength(geo.len * 0.5);
-    label.setAttribute("x", mid.x);
-    label.setAttribute("y", mid.y - 6);
-    label.setAttribute("text-anchor", "middle");
-    layerFlows.appendChild(label);
-
-    flowItems.push({ data: f, path, label, from: f.from, to: f.to });
-  });
-
-  /* ---------- イラスト（工場の絵） ---------- */
-  function illusNode(key, w) {
-    const markup = (typeof ILLUS !== "undefined" && ILLUS[key]) || "";
-    const box = (typeof ILLUS_VIEWBOX !== "undefined") ? ILLUS_VIEWBOX : "0 0 100 74";
-    const s = el("svg", { class: "illus", viewBox: box, width: w, height: w * 0.74 });
-    s.setAttribute("overflow", "visible");
-    s.innerHTML = markup;
-    return s;
-  }
-
-  /* ---------- ノード（ふせん） ---------- */
-  function shortName(name) {
-    return (name || "")
-      .replace(/（株）/g, "")
-      .replace(/（九州製鉄所 大分地区）/g, "")
-      .replace(/（大分港）/g, "")
-      .replace(/^九州電力\s*/g, "")
-      .replace(/\s*大分工場$/g, "")
-      .replace(/\s*大分事業所$/g, "");
-  }
-  const nodeEls = {};
-  NODES.forEach(n => {
-    const isFactory = n.kind === "factory";
-    const g = el("g", { class: `node ${n.kind} cat-${n.cat || "none"}`, tabindex: "0", role: "button" });
-    g.setAttribute("aria-label", n.name);
-
-    if (isFactory) {
-      /* --- 工場: 位置は丸シール、名前は余白のふだ、あいだを線でつなぐ --- */
-      const dx = n.x, dy = n.y;
-      const lx = (n.lx != null) ? n.lx : n.x;
-      const ly = (n.ly != null) ? n.ly : n.y - 70;
-      const fs = 13, maxChars = 8;
-      const lines = wrapLabel(shortName(n.name), maxChars).slice(0, 3);
-      const maxLen = Math.max.apply(null, lines.map(l => l.length));
-      const hasIll = false;
-      const illW = 30, illH = illW * 0.74;
-      const padX = 8, gap = 0;
-      const boxW = clamp(maxLen * fs * 1.05 + padX * 2, 52, 190);
-      const lh = fs * 1.4;
-      const boxH = lines.length * lh + 10;
-      const bx = clamp(lx - boxW / 2, 4, VB_W - boxW - 4);
-      const by = clamp(ly - boxH / 2, 4, VB_H - boxH - 4);
-      const boxCy = by + boxH / 2;
-
-      const ax = clamp(dx, bx + 8, bx + boxW - 8);
-      const ay = (dy < boxCy) ? by : by + boxH;
-      g.appendChild(el("path", {
-        class: "leader",
-        d: `M ${dx} ${dy} Q ${(dx + ax) / 2} ${dy} ${ax} ${ay}`
-      }));
-
-      g.appendChild(el("circle", { class: "fdot-halo", cx: dx, cy: dy, r: 10 }));
-      g.appendChild(el("circle", { class: "fdot", cx: dx, cy: dy, r: 6 }));
-
-      const lb = el("g", { class: "flabel" });
-      lb.appendChild(el("rect", { class: "flabel-bg", x: bx, y: by, width: boxW, height: boxH, rx: 7 }));
-      if (hasIll) {
-        const im = illusNode(n.illus, illW);
-        im.setAttribute("x", bx + padX);
-        im.setAttribute("y", by + (boxH - illH) / 2);
-        lb.appendChild(im);
-      }
-      const t = el("text", { class: "flabel-text" });
-      t.setAttribute("text-anchor", hasIll ? "start" : "middle");
-      t.setAttribute("font-size", fs);
-      const tx = hasIll ? bx + padX + gap : bx + boxW / 2;
-      const startY = boxCy - (lines.length - 1) * lh / 2;
-      lines.forEach((ln, idx) => {
-        const ts = el("tspan", { x: tx, y: startY + idx * lh });
-        ts.textContent = ln;
-        t.appendChild(ts);
-      });
-      lb.appendChild(t);
-      g.appendChild(lb);
+  function setBase(which) {
+    if (which === "map") {
+      map.removeLayer(layerSat); map.removeLayer(layerSatRef);
+      layerOsm.addTo(map);
     } else {
-      /* --- 世界／届け先: 破線のふだ --- */
-      const fs = 15;
-      const lines = wrapLabel(n.name, 8).slice(0, 3);
-      const maxLen = Math.max.apply(null, lines.map(l => l.length));
-      const w = clamp(maxLen * fs * 1.04 + 20, 60, 220);
-      const lh = fs * 1.45;
-      const h = lines.length * lh + 12;
-      const cx = clamp(n.x, w / 2 + 4, VB_W - w / 2 - 4);
-      const cy = clamp(n.y, h / 2 + 4, VB_H - h / 2 - 4);
-      const inner = el("g", { transform: `translate(${cx} ${cy})` });
-      inner.appendChild(el("rect", { class: "chip", x: -w / 2, y: -h / 2, width: w, height: h, rx: 8 }));
-      const text = el("text", {});
-      text.setAttribute("font-size", fs);
-      const startY = -((lines.length - 1) * lh) / 2;
-      lines.forEach((ln, idx) => {
-        const ts = el("tspan", { x: 0, y: startY + idx * lh });
-        ts.textContent = ln;
-        text.appendChild(ts);
-      });
-      inner.appendChild(text);
-      g.appendChild(inner);
+      map.removeLayer(layerOsm);
+      layerSat.addTo(map); layerSatRef.addTo(map);
     }
-    layerNodes.appendChild(g);
+    mapEl.classList.toggle("is-sat", which !== "map");
+    document.querySelectorAll("[data-base]").forEach(btn =>
+      btn.setAttribute("aria-pressed", String(btn.dataset.base === which)));
+  }
+  document.querySelectorAll("[data-base]").forEach(btn =>
+    btn.addEventListener("click", () => setBase(btn.dataset.base)));
+  setBase("sat");
 
-    nodeEls[n.id] = g;
-
-    g.addEventListener("mouseenter", () => hoverNode(n.id));
-    g.addEventListener("mouseleave", () => hoverNode(null));
-    g.addEventListener("focus", () => hoverNode(n.id));
-    g.addEventListener("blur", () => hoverNode(null));
-    g.addEventListener("click", e => { e.stopPropagation(); pinNode(n.id); });
-    g.addEventListener("keydown", e => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pinNode(n.id); }
-    });
+  /* ---------- 駅（日豊本線） ---------- */
+  const STATIONS = [
+    [33.2333, 131.6067, "大分駅"], [33.2350, 131.6790, "鶴崎駅"],
+    [33.2441, 131.7203, "大在駅"], [33.2372, 131.7520, "坂ノ市駅"]
+  ];
+  const stationLayer = L.layerGroup().addTo(map);
+  STATIONS.forEach(([lat, lng, nm]) => {
+    L.marker([lat, lng], {
+      interactive: false, keyboard: false,
+      icon: L.divIcon({ className: "stn", html: `<span>🚃 ${nm}</span>`, iconSize: [0, 0] })
+    }).addTo(stationLayer);
   });
+
+  /* ---------- 工場マーカー ---------- */
+  const markerEls = {};
+  FCT.forEach(n => {
+    const icon = L.divIcon({
+      className: `fm cat-${n.cat || "other"}${n.labelSide === "left" ? " lbl-left" : ""}`,
+      html: `<span class="fm-dot"></span><span class="fm-label">${esc(shortName(n.name))}</span>`,
+      iconSize: [16, 16], iconAnchor: [8, 8]
+    });
+    const m = L.marker([n.lat, n.lng], { icon, keyboard: true, riseOnHover: true, title: n.name }).addTo(map);
+    m.on("mouseover", () => hoverNode(n.id));
+    m.on("mouseout", () => hoverNode(null));
+    m.on("click", e => { L.DomEvent.stopPropagation(e); pinNode(n.id); });
+    m.on("keypress", e => { if (e.originalEvent.key === "Enter" || e.originalEvent.key === " ") pinNode(n.id); });
+    markerEls[n.id] = m;
+  });
+  map.on("click", () => { if (pinned) { pinned = null; applyState(); } });
+
+  /* ---------- 流れ（工場どうし） ---------- */
+  function curvePoints(a, b, bend) {
+    const midLat = (a[0] + b[0]) / 2, midLng = (a[1] + b[1]) / 2;
+    const dLat = b[0] - a[0], dLng = b[1] - a[1];
+    const len = Math.hypot(dLat, dLng) || 1e-9;
+    let pLat = -dLng / len, pLng = dLat / len;
+    const cLat = 33.2555, cLng = 131.700;
+    if ((midLat - cLat) * pLat + (midLng - cLng) * pLng < 0) { pLat = -pLat; pLng = -pLng; }
+    const off = len * bend;
+    const ctrl = [midLat + pLat * off, midLng + pLng * off];
+    const pts = [];
+    const N = 26;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N, u = 1 - t;
+      pts.push([
+        u * u * a[0] + 2 * u * t * ctrl[0] + t * t * b[0],
+        u * u * a[1] + 2 * u * t * ctrl[1] + t * t * b[1]
+      ]);
+    }
+    return pts;
+  }
+
+  const flowLayer = L.layerGroup().addTo(map);
+  const arrowLayer = L.layerGroup().addTo(map);
+  const flowItems = [];
+  const allFlows = FLOWS.map(f => ({ data: f, from: f.from, to: f.to }));
+
+  FLOWS.forEach(f => {
+    const a = nodeById[f.from], b = nodeById[f.to];
+    if (!a || !b) return;
+    if (a.kind !== "factory" || b.kind !== "factory") return;
+    const color = FLOW_KINDS[f.data ? f.data.kind : f.kind].color;
+    const pts = curvePoints([a.lat, a.lng], [b.lat, b.lng], 0.14);
+    const pl = L.polyline(pts, {
+      className: "flow k-" + f.kind, color: color, weight: 3, opacity: 0.5,
+      lineCap: "round", lineJoin: "round", interactive: false
+    }).addTo(flowLayer);
+
+    const p1 = pts[pts.length - 3], p2 = pts[pts.length - 1];
+    const ang = Math.atan2(p2[0] - p1[0], p2[1] - p1[1]) * 180 / Math.PI;
+    const arr = L.marker(pts[pts.length - 2], {
+      interactive: false, keyboard: false,
+      icon: L.divIcon({
+        className: "flow-arrow k-" + f.kind,
+        html: `<span style="transform:rotate(${-ang}deg);color:${color}">➤</span>`,
+        iconSize: [0, 0]
+      })
+    }).addTo(arrowLayer);
+
+    flowItems.push({ data: f, pl, arr, from: f.from, to: f.to });
+  });
+
+  /* 画面を工場ぜんたいに合わせる */
+  const bounds = L.latLngBounds(FCT.map(n => [n.lat, n.lng]));
+  map.fitBounds(bounds, { padding: [34, 34] });
+  map.setMaxBounds(bounds.pad(1.4));
+  if (map.getZoom() > 15) map.setZoom(14);
 
   /* ---------- 状態 ---------- */
   let hovered = null;
@@ -1662,16 +1437,7 @@ const PORT = {
   let playAll = false;
 
   function activeNodeId() { return pinned || hovered; }
-
   function flowVisible(f) { return kindsOn.has(f.data.kind); }
-
-  function flowIsActive(f) {
-    if (!flowVisible(f)) return false;
-    if (playAll) return true;
-    const id = activeNodeId();
-    if (!id) return false;
-    return f.from === id || f.to === id;
-  }
 
   function applyState() {
     const id = activeNodeId();
@@ -1679,23 +1445,29 @@ const PORT = {
 
     flowItems.forEach(f => {
       const visible = flowVisible(f);
-      f.path.classList.toggle("hidden-kind", !visible);
-      const active = flowIsActive(f);
-      f.path.classList.toggle("active", active);
-      f.path.classList.toggle("faded", visible && anyFocus && !active);
-      f.label.classList.toggle("show", active && !playAll && !!id);
-      if (active && !reduceMotion) startParticles(f); else stopParticles(f);
+      const active = visible && (playAll || (id && (f.from === id || f.to === id)));
+      const faded = visible && anyFocus && !active;
+      const op = !visible ? 0 : active ? 1 : faded ? 0.08 : (anyFocus ? 0.14 : 0.72);
+      f.pl.setStyle({ opacity: op, weight: active ? 5 : 3.4 });
+      const pe = f.pl.getElement && f.pl.getElement();
+      if (pe) { pe.classList.toggle("active", active); pe.classList.toggle("dim", faded || !visible); }
+      const ae = f.arr.getElement && f.arr.getElement();
+      if (ae) {
+        ae.style.opacity = !visible ? 0 : active ? 1 : faded ? 0.05 : 0.32;
+        ae.classList.toggle("active", active);
+      }
     });
 
-    NODES.forEach(n => {
-      const g = nodeEls[n.id];
+    FCT.forEach(n => {
+      const em = markerEls[n.id].getElement && markerEls[n.id].getElement();
+      if (!em) return;
       let faded = false;
       if (id && !playAll) {
-        faded = n.id !== id && !flowItems.some(f =>
-          flowVisible(f) && (f.from === id && f.to === n.id || f.to === id && f.from === n.id));
+        faded = n.id !== id && !flowItems.some(f => flowVisible(f) &&
+          ((f.from === id && f.to === n.id) || (f.to === id && f.from === n.id)));
       }
-      g.classList.toggle("faded", faded);
-      g.classList.toggle("active", n.id === id);
+      em.classList.toggle("faded", faded);
+      em.classList.toggle("active", n.id === id);
     });
 
     updateCard(id);
@@ -1703,16 +1475,16 @@ const PORT = {
   }
 
   /* ---------- ホバー / ピン ---------- */
-  function hoverNode(id) {
-    hovered = id;
-    if (!pinned) applyState();
-  }
+  function hoverNode(id) { hovered = id; if (!pinned) applyState(); }
   function pinNode(id) {
     pinned = (pinned === id) ? null : id;
     hovered = pinned ? id : hovered;
+    if (pinned) {
+      const n = nodeById[pinned];
+      if (n && n.lat) map.panTo([n.lat, n.lng], { animate: true });
+    }
     applyState();
   }
-  svg.addEventListener("click", () => { if (pinned) { pinned = null; applyState(); } });
 
   document.getElementById("playAll").addEventListener("click", () => {
     playAll = !playAll;
@@ -1723,6 +1495,8 @@ const PORT = {
     playAll = false; pinned = null; hovered = null;
     kindsOn.clear(); Object.keys(FLOW_KINDS).forEach(k => kindsOn.add(k));
     legend.querySelectorAll("button").forEach(b => { b.classList.add("on"); b.classList.remove("dim"); });
+    map.fitBounds(bounds, { padding: [34, 34] });
+    if (map.getZoom() > 15) map.setZoom(14);
     applyState();
   });
 
@@ -1752,8 +1526,8 @@ const PORT = {
       catTag.hidden = true;
     }
 
-    const outs = flowItems.filter(f => f.from === id && flowVisible(f));
-    const ins = flowItems.filter(f => f.to === id && flowVisible(f));
+    const outs = allFlows.filter(f => f.from === id && flowVisible(f));
+    const ins = allFlows.filter(f => f.to === id && flowVisible(f));
 
     let note = n.note;
     if (!note) {
@@ -1808,48 +1582,7 @@ const PORT = {
     ul.appendChild(li);
   }
 
-  /* ---------- 粒子アニメーション ---------- */
-  const running = new Map(); // flowItem -> { len, parts:[{d, el}], speed }
-  function startParticles(f) {
-    if (running.has(f)) return;
-    const len = f.path.getTotalLength();
-    const count = clamp(Math.round(len / 130), 2, 6);
-    const parts = [];
-    for (let i = 0; i < count; i++) {
-      const c = el("circle", { class: "particle", r: 3.6, fill: FLOW_KINDS[f.data.kind].color });
-      layerParticles.appendChild(c);
-      parts.push({ d: (len / count) * i, el: c });
-    }
-    running.set(f, { len, parts, speed: 95 });
-    if (!rafId) rafId = requestAnimationFrame(tick);
-  }
-  function stopParticles(f) {
-    const r = running.get(f);
-    if (!r) return;
-    r.parts.forEach(p => p.el.remove());
-    running.delete(f);
-  }
-  let rafId = null, lastT = 0;
-  function tick(t) {
-    const dt = lastT ? Math.min((t - lastT) / 1000, 0.05) : 0;
-    lastT = t;
-    running.forEach((r, f) => {
-      for (const p of r.parts) {
-        p.d += r.speed * dt;
-        if (p.d > r.len) p.d -= r.len;
-        const pt = f.path.getPointAtLength(p.d);
-        p.el.setAttribute("cx", pt.x);
-        p.el.setAttribute("cy", pt.y);
-      }
-    });
-    if (running.size) { rafId = requestAnimationFrame(tick); }
-    else { rafId = null; lastT = 0; }
-  }
-
   /* ---------- 大分港のしごと（データ＋グラフ） ---------- */
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  }
   function renderPort() {
     if (typeof PORT === "undefined") return;
     const lead = document.getElementById("portLead");
@@ -1936,6 +1669,7 @@ const PORT = {
 
   /* ---------- スタート ---------- */
   renderPort();
+  map.whenReady(() => setTimeout(() => { map.invalidateSize(); applyState(); }, 60));
   applyState();
 })();
 
