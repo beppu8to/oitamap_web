@@ -355,6 +355,56 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 .flow-arrow span { display: inline-block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
 .flow-arrow.active span { font-size: 19px; }
 
+/* 位置をなおすモード */
+#map.edit-mode .fm .fm-dot {
+  cursor: grab;
+  width: 26px; height: 26px; left: -5px; top: -5px;
+  border-color: var(--accent); border-width: 3px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent), 0 2px 6px rgba(0,0,0,.6);
+}
+#map.edit-mode .fm .fm-label { opacity: .8; left: 26px; }
+#map.edit-mode .fm.lbl-left .fm-label { left: auto; right: 26px; }
+#map.edit-mode .flow, #map.edit-mode .flow-arrow { opacity: .35 !important; }
+
+.edit-panel {
+  position: absolute;
+  left: 10px; right: 10px; bottom: 10px;
+  z-index: 600;
+  max-height: 60%;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border: 2.5px solid var(--accent);
+  border-radius: 12px;
+  padding: 12px 14px 14px;
+  box-shadow: 3px 4px 0 var(--shadow);
+  font-size: .86rem;
+}
+@media (min-width: 720px) { .edit-panel { left: auto; width: 380px; } }
+.edit-panel .edit-x {
+  position: absolute; top: 4px; right: 8px;
+  border: none; background: none; font-size: 1.3rem; line-height: 1;
+  color: var(--ink-soft); cursor: pointer;
+}
+.edit-h { font-family: "Yomogi", cursive; font-weight: 700; margin: 0 0 4px; }
+.edit-tip { margin: 0 0 8px; color: var(--ink-soft); }
+.edit-tip #editCount { color: var(--accent); font-weight: 700; }
+.edit-steps { margin: 0 0 8px; padding-left: 1.3em; display: grid; gap: 4px; }
+.edit-steps code { background: color-mix(in srgb, var(--ink) 12%, transparent); padding: 0 4px; border-radius: 3px; font-size: .9em; }
+.edit-steps .btn { padding: 3px 12px; font-size: .85rem; }
+.edit-text {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 35%, transparent);
+  border-radius: 6px;
+  padding: 6px;
+  background: #fff;
+  color: #222;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+#editUndo { padding: 4px 12px; font-size: .8rem; }
+
 /* 駅 */
 .stn span {
   display: inline-block;
@@ -697,6 +747,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
     <div class="toggles">
       <button type="button" id="playAll" class="btn" aria-pressed="false">▶ ぜんぶ動かす</button>
       <button type="button" id="reset" class="btn btn-ghost">↺ もどす</button>
+      <button type="button" id="editPos" class="btn btn-ghost" aria-pressed="false">📍 位置をなおす</button>
     </div>
   </section>
 
@@ -709,6 +760,19 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
         <button type="button" data-base="map" aria-pressed="false">地図</button>
       </div>
       <div id="map" role="application" aria-label="大分臨海工業地帯の地図"></div>
+
+      <div class="edit-panel" id="editPanel" hidden>
+        <button type="button" class="edit-x" id="editClose" aria-label="とじる">×</button>
+        <p class="edit-h">📍 位置をなおすモード</p>
+        <p class="edit-tip">工場の丸じるしを指でドラッグして、正しい場所へ動かしてください。<span id="editCount">まだ動かしていません</span>。</p>
+        <ol class="edit-steps">
+          <li>ピンを動かす（何回でもOK。この端末に下書きが残ります）</li>
+          <li><button type="button" class="btn" id="editCopy">コピー</button> を押す</li>
+          <li>GitHub の <code>assets/js/data.js</code> を開き、<code>const COORD_FIX =</code> で始まる行を、コピーしたものに置きかえて Commit</li>
+        </ol>
+        <textarea id="fixText" class="edit-text" readonly rows="3" aria-label="コピーする文字"></textarea>
+        <button type="button" class="btn btn-ghost" id="editUndo">↩ 動かした分を元にもどす</button>
+      </div>
     </div>
 
     <aside class="info-card is-empty" id="infoCard">
@@ -963,6 +1027,10 @@ if (typeof module !== "undefined") { module.exports = { ILLUS, ILLUS_VIEWBOX }; 
      kind     : "import"（原料の輸入・青） / "exchange"（工場どうしのやり取り・赤）
                 "energy"（電気・ガス・蒸気・黄） / "product"（製品の出荷・緑）
    ========================================================================== */
+
+/* 工場の位置のなおし。地図の「📍 位置をなおす」でコピーした1行を、
+   下の行ぜんたいと置きかえてください（さわらなければ何も変わりません）。 */
+const COORD_FIX = {};
 
 const NODES = [
   /* ---------- 工場 ---------- */
@@ -1258,10 +1326,23 @@ const PORT = {
   NODES.forEach(n => { nodeById[n.id] = n; });
   const FCT = NODES.filter(n => n.kind === "factory");
 
+  /* ---------- 工場の位置：COORD_FIX と この端末の下書き を反映 ---------- */
+  const DRAFT_KEY = "oitamap_coordfix";
+  let draft = {};
+  try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}") || {}; } catch (e) { draft = {}; }
+  const dataCoord = {};
+  FCT.forEach(n => {
+    dataCoord[n.id] = [n.lat, n.lng];
+    const fx = (typeof COORD_FIX !== "undefined" && COORD_FIX[n.id]) || null;
+    if (fx) { n.lat = fx[0]; n.lng = fx[1]; }
+    if (draft[n.id]) { n.lat = draft[n.id][0]; n.lng = draft[n.id][1]; }
+  });
+
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- 小さなヘルパー ---------- */
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function round6(x) { return Math.round(x * 1e6) / 1e6; }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   }
@@ -1365,10 +1446,20 @@ const PORT = {
       iconSize: [16, 16], iconAnchor: [8, 8]
     });
     const m = L.marker([n.lat, n.lng], { icon, keyboard: true, riseOnHover: true, title: n.name }).addTo(map);
-    m.on("mouseover", () => hoverNode(n.id));
-    m.on("mouseout", () => hoverNode(null));
-    m.on("click", e => { L.DomEvent.stopPropagation(e); pinNode(n.id); });
-    m.on("keypress", e => { if (e.originalEvent.key === "Enter" || e.originalEvent.key === " ") pinNode(n.id); });
+    m.on("mouseover", () => { if (!editMode) hoverNode(n.id); });
+    m.on("mouseout", () => { if (!editMode) hoverNode(null); });
+    m.on("click", e => { L.DomEvent.stopPropagation(e); if (!editMode) pinNode(n.id); });
+    m.on("keypress", e => { if (!editMode && (e.originalEvent.key === "Enter" || e.originalEvent.key === " ")) pinNode(n.id); });
+    m.on("drag", () => {
+      const ll = m.getLatLng();
+      n.lat = ll.lat; n.lng = ll.lng;
+      flowItems.forEach(f => { if (f.from === n.id || f.to === n.id) updateFlowGeometry(f); });
+    });
+    m.on("dragend", () => {
+      draft[n.id] = [round6(n.lat), round6(n.lng)];
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) {}
+      refreshFixText();
+    });
     markerEls[n.id] = m;
   });
   map.on("click", () => { if (pinned) { pinned = null; applyState(); } });
@@ -1400,11 +1491,25 @@ const PORT = {
   const flowItems = [];
   const allFlows = FLOWS.map(f => ({ data: f, from: f.from, to: f.to }));
 
+  function flowPts(f) {
+    const a = nodeById[f.from], b = nodeById[f.to];
+    return curvePoints([a.lat, a.lng], [b.lat, b.lng], 0.14);
+  }
+  function updateFlowGeometry(f) {
+    const pts = flowPts(f);
+    f.pl.setLatLngs(pts);
+    const p1 = pts[pts.length - 3], p2 = pts[pts.length - 1];
+    const ang = Math.atan2(p2[0] - p1[0], p2[1] - p1[1]) * 180 / Math.PI;
+    f.arr.setLatLng(pts[pts.length - 2]);
+    const sp = f.arr.getElement() && f.arr.getElement().querySelector("span");
+    if (sp) sp.style.transform = `rotate(${-ang}deg)`;
+  }
+
   FLOWS.forEach(f => {
     const a = nodeById[f.from], b = nodeById[f.to];
     if (!a || !b) return;
     if (a.kind !== "factory" || b.kind !== "factory") return;
-    const color = FLOW_KINDS[f.data ? f.data.kind : f.kind].color;
+    const color = FLOW_KINDS[f.kind].color;
     const pts = curvePoints([a.lat, a.lng], [b.lat, b.lng], 0.14);
     const pl = L.polyline(pts, {
       className: "flow k-" + f.kind, color: color, weight: 3, opacity: 0.5,
@@ -1428,13 +1533,14 @@ const PORT = {
   /* 画面を工場ぜんたいに合わせる */
   const bounds = L.latLngBounds(FCT.map(n => [n.lat, n.lng]));
   map.fitBounds(bounds, { padding: [34, 34] });
-  map.setMaxBounds(bounds.pad(1.4));
+  map.setMaxBounds(bounds.pad(3));
   if (map.getZoom() > 15) map.setZoom(14);
 
   /* ---------- 状態 ---------- */
   let hovered = null;
   let pinned = null;
   let playAll = false;
+  let editMode = false;
 
   function activeNodeId() { return pinned || hovered; }
   function flowVisible(f) { return kindsOn.has(f.data.kind); }
@@ -1498,6 +1604,67 @@ const PORT = {
     map.fitBounds(bounds, { padding: [34, 34] });
     if (map.getZoom() > 15) map.setZoom(14);
     applyState();
+  });
+
+  /* ---------- 位置をなおすモード ---------- */
+  const editBtn = document.getElementById("editPos");
+  const editPanel = document.getElementById("editPanel");
+  const fixText = document.getElementById("fixText");
+
+  function refreshFixText() {
+    const obj = {};
+    FCT.forEach(n => { obj[n.id] = [round6(n.lat), round6(n.lng)]; });
+    if (fixText) fixText.value = "const COORD_FIX = " + JSON.stringify(obj) + ";";
+    const moved = FCT.filter(n => {
+      const d = dataCoord[n.id];
+      return Math.abs(n.lat - d[0]) > 1e-5 || Math.abs(n.lng - d[1]) > 1e-5;
+    }).length;
+    const cnt = document.getElementById("editCount");
+    if (cnt) cnt.textContent = moved ? `${moved} か所うごかしました` : "まだ動かしていません";
+  }
+
+  function setEditMode(on) {
+    editMode = on;
+    if (on) { playAll = false; pinned = null; hovered = null; applyState(); }
+    FCT.forEach(n => {
+      const m = markerEls[n.id];
+      if (on) m.dragging.enable(); else m.dragging.disable();
+    });
+    if (editPanel) editPanel.hidden = !on;
+    if (editBtn) editBtn.setAttribute("aria-pressed", String(on));
+    mapEl.classList.toggle("edit-mode", on);
+    if (on) refreshFixText();
+  }
+
+  if (editBtn && Object.keys(draft).length) editBtn.textContent = "📍 位置をなおす（下書きあり）";
+  if (editBtn) editBtn.addEventListener("click", () => setEditMode(!editMode));
+  const editClose = document.getElementById("editClose");
+  if (editClose) editClose.addEventListener("click", () => setEditMode(false));
+
+  const editCopy = document.getElementById("editCopy");
+  if (editCopy) editCopy.addEventListener("click", () => {
+    fixText.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(fixText.value).then(() => {}, () => {});
+      ok = true;
+    }
+    editCopy.textContent = ok ? "コピーしました ✓" : "下の文字を選んでコピー";
+    setTimeout(() => { editCopy.textContent = "コピー"; }, 2200);
+  });
+
+  const editUndo = document.getElementById("editUndo");
+  if (editUndo) editUndo.addEventListener("click", () => {
+    FCT.forEach(n => {
+      const base = (typeof COORD_FIX !== "undefined" && COORD_FIX[n.id]) || dataCoord[n.id];
+      n.lat = base[0]; n.lng = base[1];
+      markerEls[n.id].setLatLng([n.lat, n.lng]);
+    });
+    flowItems.forEach(updateFlowGeometry);
+    draft = {};
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    refreshFixText();
   });
 
   /* ---------- 情報カード ---------- */
