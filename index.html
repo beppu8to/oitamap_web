@@ -30,6 +30,11 @@
   --c-energy:   #cf9526;
   --c-product:  #5f7d43;
 
+  --cat-metal:  #b0503b;
+  --cat-chem:   #5a7d44;
+  --cat-energy: #3d6f92;
+  --cat-other:  #6b5f86;
+
   --card-bg:    #fbf6e9;
   --shadow:     rgba(60, 45, 25, .28);
   --maxw:       1180px;
@@ -50,6 +55,10 @@
     --c-exchange: #e88b68;
     --c-energy:   #edc25e;
     --c-product:  #9cc072;
+    --cat-metal:  #e0876f;
+    --cat-chem:   #9cc072;
+    --cat-energy: #6db2d6;
+    --cat-other:  #b0a3d6;
     --card-bg:  #35302a;
     --shadow:   rgba(0, 0, 0, .5);
   }
@@ -178,7 +187,15 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   margin-top: 22px;
 }
 
+.legend-wrap { display: flex; flex-direction: column; gap: 8px; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.cat-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .8rem; }
+.cat-key { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); }
+.cat-dot { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--cat, var(--ink-soft)); }
+.cat-key.cat-metal  { --cat: var(--cat-metal); }
+.cat-key.cat-chem   { --cat: var(--cat-chem); }
+.cat-key.cat-energy { --cat: var(--cat-energy); }
+.cat-key.cat-other  { --cat: var(--cat-other); }
 .legend button {
   font: inherit;
   cursor: pointer;
@@ -351,7 +368,6 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   stroke-width: 2;
   filter: url(#roughSoft);
 }
-.node .chip-tab { fill: var(--accent); opacity: .85; }
 .node text {
   font-family: "Zen Kurenaido", sans-serif;
   fill: var(--ink);
@@ -365,14 +381,32 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 .node.world .chip  { fill: color-mix(in srgb, var(--c-import) 18%, var(--card-bg)); stroke-dasharray: 4 3; }
 .node.dest .chip   { fill: color-mix(in srgb, var(--c-product) 16%, var(--card-bg)); stroke-dasharray: 4 3; }
 
-.node .dot { stroke: var(--ink); stroke-width: 1.5; }
-.node.t-steel   .dot { fill: #8a8f98; }
-.node.t-chem    .dot { fill: #c98b3b; }
-.node.t-energy  .dot { fill: #d8b23c; }
-.node.t-paper   .dot { fill: #cdbf9a; }
-.node.t-ship    .dot { fill: #3d7a86; }
-.node.t-port    .dot { fill: #b25b43; }
-.node.t-machine .dot { fill: #6b7f92; }
+/* 工場のイラスト（線画） ―― 地図上とカードで共通 */
+.illus { overflow: visible; color: var(--cat-other); }
+.illus * {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.illus [fill^="rgba"] { fill: color-mix(in srgb, currentColor 13%, transparent); stroke: currentColor; }
+.illus text { stroke: none; fill: currentColor; font-family: "Yomogi", cursive; }
+
+.cat-metal  { --cat: var(--cat-metal); }
+.cat-chem   { --cat: var(--cat-chem); }
+.cat-energy { --cat: var(--cat-energy); }
+.cat-other  { --cat: var(--cat-other); }
+.node.cat-metal  .illus, .info-illus.cat-metal  .illus { color: var(--cat-metal); }
+.node.cat-chem   .illus, .info-illus.cat-chem   .illus { color: var(--cat-chem); }
+.node.cat-energy .illus, .info-illus.cat-energy .illus { color: var(--cat-energy); }
+.node.cat-other  .illus, .info-illus.cat-other  .illus { color: var(--cat-other); }
+.node .cat-bar { stroke: none; opacity: .9; }
+.node.cat-metal  .cat-bar { fill: var(--cat-metal); }
+.node.cat-chem   .cat-bar { fill: var(--cat-chem); }
+.node.cat-energy .cat-bar { fill: var(--cat-energy); }
+.node.cat-other  .cat-bar { fill: var(--cat-other); }
 
 .node .chip, .node text { transition: transform .18s; }
 .node:hover .chip, .node.active .chip {
@@ -408,8 +442,31 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 .info-card.is-empty .close,
 .info-card.is-empty h2,
 .info-card.is-empty .info-note,
+.info-card.is-empty .info-illus,
+.info-card.is-empty .info-cat,
 .info-card.is-empty .info-cols,
+.info-card.is-empty .info-by,
 .info-card.is-empty .info-links { display: none; }
+
+.info-illus {
+  margin: 10px 0 4px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--cat, var(--ink)) 8%, var(--card-bg));
+  border: 1.5px solid color-mix(in srgb, var(--cat, var(--ink)) 30%, transparent);
+  border-radius: 10px;
+  text-align: center;
+}
+.info-illus .illus { width: 100%; max-width: 210px; height: auto; aspect-ratio: 100 / 74; }
+.info-cat {
+  display: inline-block;
+  font-family: "Yomogi", cursive;
+  font-size: .72rem;
+  padding: 1px 9px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--cat, var(--ink-soft));
+}
+.info-by { margin-top: 12px; }
 .info-card .placeholder {
   font-family: "Yomogi", cursive;
   color: var(--ink-soft);
@@ -458,6 +515,127 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 .summary h2 { font-family: "Kaisei Decol", serif; margin: 0 0 8px; }
 .summary p { margin: 0; }
 
+/* ---------------- 大分港のしごと ---------------- */
+.port { margin-top: 40px; }
+.port > h2 {
+  font-family: "Kaisei Decol", serif;
+  margin: 0 0 6px;
+  font-size: clamp(1.2rem, 3.4vw, 1.6rem);
+}
+.port > h3 {
+  font-family: "Yomogi", cursive;
+  margin: 30px 0 10px;
+  font-size: 1.08rem;
+  border-bottom: 2px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+  padding-bottom: 4px;
+}
+.port-lead { margin: 0 0 18px; color: var(--ink-soft); font-size: .95rem; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.stat {
+  background: var(--card-bg);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 2px 3px 0 var(--shadow);
+}
+.stat-v { font-family: "Kaisei Decol", serif; font-size: 1.5rem; line-height: 1.15; }
+.stat-u { font-size: .72rem; font-family: "Zen Kurenaido", sans-serif; margin-left: 3px; color: var(--ink-soft); }
+.stat-l { font-size: .84rem; margin-top: 4px; }
+.stat-s { font-size: .74rem; color: var(--ink-soft); margin-top: 2px; }
+
+.chart-fig {
+  margin: 24px 0 0;
+  padding: 16px 18px;
+  background: var(--card-bg);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 3px 4px 0 var(--shadow);
+}
+.chart-fig figcaption {
+  font-family: "Yomogi", cursive;
+  font-size: .95rem;
+  margin-bottom: 8px;
+}
+.chart { display: block; width: 100%; height: auto; overflow: visible; }
+.wc-axis { stroke: color-mix(in srgb, var(--ink) 45%, transparent); stroke-width: 2; }
+.wc-name { font-family: "Yomogi", cursive; font-size: 17px; fill: var(--ink); }
+.wc-val  { font-family: "Kaisei Decol", serif; font-size: 17px; fill: var(--ink); }
+.wc-bar {
+  fill: color-mix(in srgb, var(--c-import) 45%, var(--card-bg));
+  stroke: var(--c-import);
+  stroke-width: 2;
+}
+.wc-bar.is-hi { fill: var(--c-import); }
+.chart-note { font-size: .76rem; color: var(--ink-soft); margin: 8px 0 0; }
+
+.model { display: flex; flex-direction: column; gap: 6px; }
+.model-step {
+  border: 2px solid var(--ink);
+  border-left-width: 8px;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: var(--card-bg);
+}
+.model-step .model-h { font-family: "Yomogi", cursive; font-weight: 700; margin-bottom: 4px; }
+.model-step p { margin: 0; font-size: .9rem; }
+.model-step.k-import   { border-left-color: var(--c-import); }
+.model-step.k-exchange { border-left-color: var(--c-exchange); }
+.model-step.k-product  { border-left-color: var(--c-product); }
+.model-arrow { text-align: center; color: var(--ink-soft); font-size: .9rem; line-height: 1; }
+
+.trade { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.trade-col {
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--card-bg);
+}
+.trade-col h4 {
+  font-family: "Yomogi", cursive;
+  margin: 0 0 8px;
+  font-size: .95rem;
+  padding-bottom: 4px;
+  border-bottom: 2px solid currentColor;
+}
+.trade-in h4  { color: var(--c-import); }
+.trade-out h4 { color: var(--c-product); }
+.trade-col ul { margin: 0; padding: 0; list-style: none; }
+.trade-col li { padding: 6px 0; border-bottom: 1px dashed color-mix(in srgb, var(--ink) 22%, transparent); }
+.trade-col li:last-child { border-bottom: none; }
+.trade-col li b { display: block; font-size: .9rem; }
+.trade-col li span { font-size: .76rem; color: var(--ink-soft); }
+
+.tp-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.tp-card {
+  display: flex;
+  gap: 10px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--card-bg);
+}
+.tp-icon { font-size: 1.5rem; line-height: 1; }
+.tp-t { font-family: "Yomogi", cursive; font-weight: 700; font-size: .92rem; margin-bottom: 3px; }
+.tp-card p { margin: 0; font-size: .82rem; }
+
+.districts { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.districts li {
+  display: flex;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 35%, transparent);
+  border-radius: 8px;
+}
+.districts li b { flex: 0 0 92px; font-size: .88rem; }
+.districts li span { font-size: .82rem; color: var(--ink-soft); }
+
+.src-note { font-size: .74rem; color: var(--ink-soft); margin: 20px 0 0; }
+
 .original { margin-top: 26px; }
 .original summary {
   font-family: "Yomogi", cursive;
@@ -498,6 +676,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   }
   .info-card.is-empty { display: none; }
   .info-card .tape { display: none; }
+  .trade { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -526,7 +705,10 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 
 <main>
   <section class="controls" aria-label="表示の切りかえ">
-    <div class="legend" id="legend"></div>
+    <div class="legend-wrap">
+      <div class="legend" id="legend"></div>
+      <div class="cat-legend" id="catLegend" aria-label="工場の色分け"></div>
+    </div>
     <div class="toggles">
       <button type="button" id="playAll" class="btn" aria-pressed="false">▶ ぜんぶ動かす</button>
       <button type="button" id="reset" class="btn btn-ghost">↺ もどす</button>
@@ -559,7 +741,9 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
     <aside class="info-card is-empty" id="infoCard">
       <button type="button" class="close" id="infoClose" aria-label="とじる">×</button>
       <span class="tape" aria-hidden="true"></span>
-      <p class="placeholder">工場のふせんにマウスを乗せる（スマホはタップ）と、ここに「原料」「製品」「つながっている先」が出ます。</p>
+      <p class="placeholder">工場のふせんにマウスを乗せる（スマホはタップ）と、ここに絵と「原料」「製品」「つながっている先」が出ます。</p>
+      <div class="info-illus" id="infoIllus" hidden></div>
+      <span class="info-cat" id="infoCat" hidden></span>
       <h2 id="infoName"></h2>
       <p class="info-note" id="infoNote"></p>
       <div class="info-cols">
@@ -572,6 +756,10 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
           <ul id="infoProducts"></ul>
         </div>
       </div>
+      <div class="info-by" id="infoByRow" hidden>
+        <h3>副産物（いっしょにできるもの）</h3>
+        <ul id="infoByproducts"></ul>
+      </div>
       <div class="info-links">
         <h3>つながっている先</h3>
         <ul id="infoConnections"></ul>
@@ -582,6 +770,42 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   <section class="summary">
     <h2>まとめ <span aria-hidden="true">🚢</span></h2>
     <p id="summary"></p>
+  </section>
+
+  <section class="port">
+    <h2>もっとくわしく：大分港のしごと <span aria-hidden="true">⚓</span></h2>
+    <p class="port-lead" id="portLead"></p>
+
+    <div class="stat-row" id="portStats"></div>
+
+    <figure class="chart-fig">
+      <figcaption>重さでくらべる港の大きさ（1年あたり・おおよそ）</figcaption>
+      <svg id="weightChart" class="chart" role="img" aria-label="重さでみた1年間の貨物量。大分港 約6,800万トン、博多港 約3,100万トン。大分港は博多港のおよそ2倍。"></svg>
+      <p class="chart-note" id="weightNote"></p>
+    </figure>
+
+    <h3>大分港のしくみ（3ステップ）</h3>
+    <div class="model" id="portModel"></div>
+
+    <h3>主に何が行き来している？</h3>
+    <div class="trade">
+      <div class="trade-col trade-in">
+        <h4>おもな輸入品（海外から）</h4>
+        <ul id="portImports"></ul>
+      </div>
+      <div class="trade-col trade-out">
+        <h4>おもな輸出品（海外へ）</h4>
+        <ul id="portExports"></ul>
+      </div>
+    </div>
+
+    <h3>4つの運び方</h3>
+    <div class="tp-row" id="portTransport"></div>
+
+    <h3>港をつくる7つの地区</h3>
+    <ul class="districts" id="portDistricts"></ul>
+
+    <p class="src-note" id="portSrc"></p>
   </section>
 
   <section class="original">
@@ -601,198 +825,450 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 </footer>
 <script>
 /* =============================================================================
+   工場のイラスト（手書きふうの線画）
+   -----------------------------------------------------------------------------
+   ILLUS[キー] = SVGの中身。viewBox は "0 0 100 74"。
+   線は currentColor、うすい塗りは fill="rgba(0,0,0,.06)"。
+   data.js の各工場の illus でこのキーを指定します。
+   ========================================================================== */
+
+const ILLUS_VIEWBOX = "0 0 100 74";
+
+const ILLUS = {
+  /* 火力発電所（煙突・冷却塔・送電鉄塔） */
+  powerplant: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <path d="M12 66 L17 30 Q25 26 33 30 L38 66 Z" fill="rgba(0,0,0,.06)"/>
+    <path d="M40 66 L44 22 Q53 18 62 22 L66 66 Z" fill="rgba(0,0,0,.06)"/>
+    <circle cx="25" cy="20" r="5"/><circle cx="33" cy="13" r="4"/>
+    <circle cx="53" cy="12" r="5"/><circle cx="61" cy="6" r="4"/>
+    <path d="M80 66 L86 18 L92 66 M76 66 L96 66 M78 52 L94 52 M81 38 L91 38 M86 18 L78 28 M86 18 L94 28"/>
+    <rect x="4" y="52" width="10" height="14" fill="rgba(0,0,0,.06)"/>`,
+
+  /* 製油所（円筒タンク＋精留塔） */
+  refinery: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <rect x="8" y="40" width="20" height="26" rx="2" fill="rgba(0,0,0,.06)"/>
+    <rect x="32" y="32" width="24" height="34" rx="2" fill="rgba(0,0,0,.06)"/>
+    <path d="M8 40 Q18 34 28 40 M32 32 Q44 26 56 32"/>
+    <rect x="72" y="14" width="14" height="52" fill="rgba(0,0,0,.06)"/>
+    <line x1="72" y1="28" x2="86" y2="28"/><line x1="72" y1="42" x2="86" y2="42"/><line x1="72" y1="54" x2="86" y2="54"/>
+    <path d="M79 14 Q79 8 86 8"/>
+    <line x1="56" y1="50" x2="72" y2="50"/>`,
+
+  /* 化学プラント（蒸留塔＋球形タンク） */
+  chemplant: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <rect x="8" y="12" width="12" height="54" fill="rgba(0,0,0,.06)"/>
+    <rect x="24" y="26" width="10" height="40" fill="rgba(0,0,0,.06)"/>
+    <line x1="8" y1="24" x2="20" y2="24"/><line x1="8" y1="38" x2="20" y2="38"/><line x1="8" y1="52" x2="20" y2="52"/>
+    <circle cx="58" cy="42" r="16" fill="rgba(0,0,0,.06)"/>
+    <line x1="46" y1="52" x2="46" y2="66"/><line x1="58" y1="58" x2="58" y2="66"/><line x1="70" y1="52" x2="70" y2="66"/>
+    <path d="M34 34 Q42 34 42 44"/>
+    <rect x="80" y="46" width="14" height="20" fill="rgba(0,0,0,.06)"/>`,
+
+  /* LNG基地（大きな球形タンク） */
+  lng: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <circle cx="30" cy="40" r="22" fill="rgba(0,0,0,.06)"/>
+    <circle cx="72" cy="46" r="15" fill="rgba(0,0,0,.06)"/>
+    <line x1="18" y1="57" x2="18" y2="66"/><line x1="30" y1="62" x2="30" y2="66"/><line x1="42" y1="57" x2="42" y2="66"/>
+    <line x1="63" y1="59" x2="63" y2="66"/><line x1="72" y1="61" x2="72" y2="66"/><line x1="81" y1="59" x2="81" y2="66"/>
+    <text x="30" y="45" font-size="13" text-anchor="middle" stroke="none" fill="currentColor">LNG</text>`,
+
+  /* 製鉄所（高炉・熱風炉・煙突） */
+  steelworks: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <path d="M16 66 L16 32 L12 22 L34 22 L30 32 L30 66 Z" fill="rgba(0,0,0,.06)"/>
+    <rect x="40" y="24" width="12" height="42" rx="6" fill="rgba(0,0,0,.06)"/>
+    <rect x="56" y="24" width="12" height="42" rx="6" fill="rgba(0,0,0,.06)"/>
+    <rect x="78" y="12" width="8" height="54" fill="rgba(0,0,0,.06)"/>
+    <circle cx="22" cy="14" r="4"/><circle cx="29" cy="8" r="3"/>
+    <path d="M6 66 L6 48 L16 48"/>`,
+
+  /* 電線工場（ケーブルのドラム） */
+  cablereel: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <circle cx="40" cy="38" r="27" fill="rgba(0,0,0,.06)"/>
+    <circle cx="40" cy="38" r="9"/>
+    <path d="M14 38 Q14 16 40 16 Q66 16 66 38" opacity=".5"/>
+    <path d="M66 38 q11 -1 15 8 q4 13 -6 20"/>
+    <line x1="76" y1="66" x2="92" y2="52"/>`,
+
+  /* 製紙工場（紙・トイレットペーパーのロール） */
+  paperrolls: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <rect x="8" y="30" width="26" height="36" rx="13" fill="rgba(0,0,0,.06)"/>
+    <ellipse cx="21" cy="30" rx="13" ry="5"/><circle cx="21" cy="30" r="3"/>
+    <rect x="40" y="22" width="26" height="44" rx="13" fill="rgba(0,0,0,.06)"/>
+    <ellipse cx="53" cy="22" rx="13" ry="5"/><circle cx="53" cy="22" r="3"/>
+    <rect x="72" y="36" width="22" height="30" rx="11" fill="rgba(0,0,0,.06)"/>
+    <ellipse cx="83" cy="36" rx="11" ry="4"/><circle cx="83" cy="36" r="3"/>`,
+
+  /* 板紙工場（工場棟＋大きな紙ロール） */
+  cardboard: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <rect x="8" y="30" width="40" height="36" fill="rgba(0,0,0,.06)"/>
+    <path d="M8 30 L16 20 L48 20 L48 30"/>
+    <line x1="16" y1="42" x2="40" y2="42"/><line x1="16" y1="54" x2="40" y2="54"/>
+    <rect x="58" y="24" width="30" height="42" rx="15" fill="rgba(0,0,0,.06)"/>
+    <ellipse cx="73" cy="24" rx="15" ry="6"/><circle cx="73" cy="24" r="4"/>`,
+
+  /* ガントリークレーン工場 */
+  crane: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <path d="M18 66 L18 24 M74 66 L74 24 M30 66 L30 30 M62 66 L62 30"/>
+    <path d="M10 24 L94 24"/>
+    <path d="M10 24 L10 14 L40 14"/>
+    <path d="M94 24 L94 10 L66 10"/>
+    <line x1="34" y1="24" x2="34" y2="40"/><rect x="28" y="40" width="12" height="7" fill="rgba(0,0,0,.06)"/>`,
+
+  /* 造船所（船体＋クレーン） */
+  shipyard: `
+    <path d="M8 62 q10 6 20 0 q10 -6 20 0 q10 6 20 0 q10 -6 20 0" opacity=".5"/>
+    <path d="M14 50 L82 50 L74 62 L22 62 Z" fill="rgba(0,0,0,.06)"/>
+    <rect x="40" y="38" width="26" height="12" fill="rgba(0,0,0,.06)"/>
+    <line x1="30" y1="50" x2="30" y2="34"/><path d="M30 34 L48 40 L30 42 Z"/>
+    <path d="M78 62 L78 16 M64 62 L90 26 M78 16 L70 16"/>`,
+
+  /* コンテナターミナル（コンテナの山＋ガントリー＋船） */
+  container: `
+    <path d="M56 66 L100 66 L94 74 L62 74 Z" fill="rgba(0,0,0,.06)"/>
+    <line x1="2" y1="66" x2="56" y2="66"/>
+    <rect x="8" y="54" width="20" height="11" fill="rgba(0,0,0,.06)"/>
+    <rect x="8" y="43" width="20" height="11" fill="rgba(0,0,0,.06)"/>
+    <rect x="30" y="54" width="20" height="11" fill="rgba(0,0,0,.06)"/>
+    <path d="M58 66 L58 16 M92 66 L92 16 M58 16 L100 16 M74 16 L74 66"/>
+    <path d="M58 16 L50 16"/>
+    <rect x="66" y="44" width="22" height="13" fill="rgba(0,0,0,.06)"/>`,
+
+  /* 清掃工場（ごみ焼却＋高い煙突） */
+  incinerator: `
+    <line x1="4" y1="66" x2="96" y2="66"/>
+    <rect x="10" y="30" width="42" height="36" fill="rgba(0,0,0,.06)"/>
+    <rect x="28" y="18" width="16" height="12" fill="rgba(0,0,0,.06)"/>
+    <line x1="18" y1="44" x2="44" y2="44"/><line x1="18" y1="54" x2="44" y2="54"/>
+    <rect x="66" y="10" width="10" height="56" fill="rgba(0,0,0,.06)"/>
+    <circle cx="71" cy="7" r="4"/><circle cx="78" cy="3" r="3"/>`,
+
+  /* ネームプレート工場（銘板） */
+  nameplate: `
+    <rect x="12" y="18" width="76" height="38" rx="4" fill="rgba(0,0,0,.06)"/>
+    <rect x="19" y="25" width="62" height="24" rx="2"/>
+    <text x="50" y="43" font-size="16" text-anchor="middle" stroke="none" fill="currentColor">高田</text>
+    <circle cx="19" cy="25" r="1.6"/><circle cx="81" cy="25" r="1.6"/>
+    <circle cx="19" cy="49" r="1.6"/><circle cx="81" cy="49" r="1.6"/>
+    <line x1="30" y1="60" x2="70" y2="60"/>`
+};
+
+if (typeof module !== "undefined") { module.exports = { ILLUS, ILLUS_VIEWBOX }; }
+
+
+/* =============================================================================
    大分臨海工業地帯 原料・製品マップ  ―  データ定義
    -----------------------------------------------------------------------------
    ここだけ直せば地図の中身を変えられます。
 
    NODES : 工場や「世界／届け先」のふせん（点）
-     id       : 半角英数の名前（FLOWSからこのidで参照します）
-     name     : 画面に出る名前
-     kind     : "factory"（工場） / "world"（海外から入ってくる） / "dest"（出ていく先）
-     x, y     : 地図の中の位置。viewBox は 0 0 1280 720。
-     tags     : 工場の種類（アイコンの色分けに使用）"steel"|"chem"|"energy"|"paper"|"ship"|"port"|"machine"
-     materials: 入ってくるもの（原料）※工場のみ
-     products : 出ていくもの（製品）※工場のみ
-     note     : ふきだしメモ（手書き地図の内容をやさしく要約）
+     id        : 半角英数の名前（FLOWSからこのidで参照します）
+     name      : 画面に出る名前
+     kind      : "factory"（工場） / "world"（海外から入ってくる） / "dest"（出ていく先）
+     cat       : 工場の種類（色分け）"metal"(鉄鋼・金属) "chem"(石油・化学) "energy"(電力・エネルギー) "other"(その他)
+     illus     : イラストのキー（illustrations.js の ILLUS）
+     x, y      : 地図の中の位置。viewBox は 0 0 1280 660。
+     materials : 入ってくるもの（原料）※工場のみ
+     products  : 出ていくもの（製品）※工場のみ
+     byproducts: 副産物（あれば）※工場のみ
+     note      : ふきだしメモ（手書き地図・大分県資料などをやさしく要約）
 
    FLOWS : ものの流れ（矢印）
      from, to : NODES の id
      label    : 流れているもの
      kind     : "import"（原料の輸入・青） / "exchange"（工場どうしのやり取り・赤）
-                "energy"（電気・ガス・黄） / "product"（製品の出荷・緑）
+                "energy"（電気・ガス・蒸気・黄） / "product"（製品の出荷・緑）
    ========================================================================== */
 
 const NODES = [
   /* ---------- 工場 ---------- */
   {
-    id: "nissetsu", name: "日本製鉄", kind: "factory", tags: "steel",
-    x: 300, y: 302,
-    materials: ["鉄鉱石（ブラジル）", "石炭（オーストラリア）"],
-    products: ["熱延鋼板（自動車用など）", "厚板（造船用など）", "副生ガス・残重油"],
-    note: "鉄鉱石と石炭を船で運び入れ、熱延鋼板や厚板をつくる。厚板は近くの造船所やクレーン工場へ、鋼板は自動車・建材として全国へ。工場から出る副生ガスや残重油は発電所の燃料になる。"
+    id: "nissetsu", name: "日本製鉄（九州製鉄所 大分地区）", kind: "factory", cat: "metal", illus: "steelworks",
+    x: 332, y: 258,
+    materials: ["鉄鉱石（オーストラリア・ブラジルなど）", "石炭・原料炭（オーストラリアなど）", "石灰石（津久見市などからトラックで）"],
+    products: ["熱延鋼板（自動車用など）", "厚板（造船・建築用など）"],
+    byproducts: ["鉄スラグ（セメント・道路の材料に）", "副生ガス・残重油（発電所の燃料に）"],
+    note: "鉄鉱石と石炭を超大型船で受け入れる、国内最大級の製鉄所。高炉で鉄をつくり、鋼板や厚板に加工する。鋼板はトラックで福岡の自動車工場（トヨタ自動車九州・日産自動車九州・ダイハツ九州など）へ、厚板は近くの造船所やクレーン工場へ。製鉄で出る副生ガスは発電所の燃料に、鉄スラグはセメントや道路の材料になる。"
   },
   {
-    id: "kkh", name: "九州共同発電", kind: "factory", tags: "energy",
-    x: 158, y: 222,
-    materials: ["石炭（オーストラリア）", "副生ガス・残重油（日本製鉄）"],
-    products: ["電力"],
-    note: "火力発電所。石炭に加えて、となりの日本製鉄から出る副生ガスや残重油も燃料にする。つくった電気は九州電力と日本製鉄へ送る。"
+    id: "kkh", name: "九州共同発電（株）", kind: "factory", cat: "energy", illus: "powerplant",
+    x: 182, y: 232,
+    materials: ["石炭（オーストラリアなど）", "天然ガス・原油", "副生ガス・残重油（日本製鉄から）"],
+    products: ["電気", "蒸気"],
+    note: "火力発電所。石炭や天然ガスに加え、となりの日本製鉄から出る副生ガスや残重油も燃料にする。つくった電気と蒸気は九州電力や日本製鉄、まわりの工場へ送る。"
   },
   {
-    id: "showa", name: "クラサスケミカル大分コンビナート", kind: "factory", tags: "chem",
-    x: 540, y: 270,
-    materials: ["ナフサ（ENEOS大分製油所）"],
-    products: ["エチレン", "プロピレン", "石油化学の基礎製品"],
-    note: "製油所から届くナフサを分解して、エチレンやプロピレンなどの石油化学の「もと」をつくり、近くの化学工場へ送る。"
+    id: "showa", name: "クラサスケミカル（株）大分工場", kind: "factory", cat: "chem", illus: "chemplant",
+    x: 545, y: 235,
+    materials: ["エチレン・プロピレン（石油化学の基礎製品）"],
+    products: ["塩化ビニル樹脂（塩ビ）など"],
+    note: "石油からつくられるエチレンやプロピレンを原料に、水道管やサッシ、床材などになる塩化ビニル樹脂をつくる。近くの製油所やコンビナートと配管でつながり、原料や電気・蒸気をやり取りしている。"
   },
   {
-    id: "eneos", name: "ENEOS大分製油所", kind: "factory", tags: "energy",
-    x: 762, y: 268,
-    materials: ["原油（オーストラリアなど）"],
-    products: ["ガソリン・軽油・灯油", "ナフサ", "石油化学製品", "電気"],
-    note: "原油からガソリン・軽油・灯油をつくり、九州のガソリンスタンドへ。ナフサは石油化学工場へ送り、電気もつくる。"
+    id: "eneos", name: "ENEOS（株）大分製油所", kind: "factory", cat: "chem", illus: "refinery",
+    x: 752, y: 246,
+    materials: ["原油（中東・オーストラリアなど）"],
+    products: ["ガソリン・軽油・灯油", "ジェット燃料", "ナフサ・石油化学製品", "電気・蒸気"],
+    note: "タンカーで運ばれる原油を蒸留して、ガソリン・軽油・灯油・ジェット燃料をつくる。ガソリンなどはタンクローリーで九州各地のガソリンスタンドへ。ナフサは近くの化学工場へ、電気や蒸気もまわりの工場へ送る。"
   },
   {
-    id: "sumika", name: "住友化学 大分工場", kind: "factory", tags: "chem",
-    x: 505, y: 408,
-    materials: ["基礎化学原料・電子材料原料（コンビナート）", "液体・粉体の化学原料"],
-    products: ["農薬", "医薬品の中間体", "タイヤ用接着剤・添加剤"],
-    note: "コンビナートから届く化学原料を使って、農薬や医薬品の中間体、タイヤ用の接着剤や添加剤などをつくり、国内外の工場へ送る。"
+    id: "sumika", name: "住友化学（株）大分工場", kind: "factory", cat: "chem", illus: "chemplant",
+    x: 468, y: 420,
+    materials: ["ナフサなどの化学原料（ENEOS大分製油所から）"],
+    products: ["農薬", "医薬品の中間体", "タイヤ用の化学薬品・添加剤"],
+    byproducts: ["高純度アルミナ（電子材料などに）"],
+    note: "石油からとれるナフサなどを原料に、農薬や医薬品のもと、タイヤを強くする薬品などをつくり、国内外の工場へ送る。反応でできる高純度アルミナは電子部品の材料になる。"
   },
   {
-    id: "oji", name: "王子マテリア", kind: "factory", tags: "paper",
-    x: 612, y: 328,
-    materials: ["古紙", "木材チップ", "パルプ"],
+    id: "oji", name: "王子マテリア（株）大分工場", kind: "factory", cat: "other", illus: "cardboard",
+    x: 612, y: 330,
+    materials: ["古紙（国内回収）", "木材チップ（国内・海外）", "パルプ"],
     products: ["コンテナ原紙", "段ボール原紙"],
-    note: "古紙や木材チップ、パルプからコンテナ原紙・段ボール原紙をつくり、国内の段ボールメーカーへ送る。"
+    note: "古紙や木材チップをとかして、段ボールのもとになる厚い紙をつくる。製品は国内の段ボールメーカーへ送られ、荷物を運ぶ箱になる。"
   },
   {
-    id: "kyuden", name: "九州電力 新大分発電所", kind: "factory", tags: "energy",
-    x: 862, y: 232,
-    materials: ["LNG（液化天然ガス）", "電力（九州共同発電）"],
-    products: ["電気"],
-    note: "九州でいちばん大きな火力発電所。LNGを燃料に、九州全体の電気の約3分の1をつくって九州全域へ送る。"
+    id: "kyuden", name: "九州電力（株）新大分発電所", kind: "factory", cat: "energy", illus: "powerplant",
+    x: 892, y: 224,
+    materials: ["LNG（液化天然ガス／オーストラリアなど）"],
+    products: ["電気", "蒸気"],
+    note: "九州でいちばん大きな火力発電所。となりの大分エル・エヌ・ジーから届くLNGを燃料に、九州全体の電気のおよそ3分の1をつくり、九州じゅうへ送る。"
   },
   {
-    id: "oitalng", name: "大分エル・エヌ・ジー", kind: "factory", tags: "energy",
-    x: 948, y: 286,
-    materials: ["LNG（オーストラリアなど）"],
-    products: ["天然ガス"],
-    note: "海外からLNG（液化天然ガス）を船で受け入れ、九州電力の発電所やガス会社へ送り出す。日本のLNG輸入量は世界全体の約20％（2024年）。"
+    id: "oitalng", name: "大分エル・エヌ・ジー（株）", kind: "factory", cat: "energy", illus: "lng",
+    x: 1016, y: 264,
+    materials: ["LNG（オーストラリア・中東・東南アジアなど）"],
+    products: ["天然ガス（気化して送る）"],
+    note: "海外からLNGタンカーで運ばれる液化天然ガス（−162℃）を大きな球形タンクにためる。使うときに温めて気体にもどし、となりの新大分発電所や都市ガス会社へパイプで送る。日本のLNG輸入量は世界全体のおよそ2割。"
   },
   {
-    id: "mnz", name: "南日本造船", kind: "factory", tags: "ship",
-    x: 1070, y: 300,
-    materials: ["鋼材・厚板（日本製鉄）"],
+    id: "mnz", name: "南日本造船（株）大分事業所", kind: "factory", cat: "other", illus: "shipyard",
+    x: 1116, y: 338,
+    materials: ["鋼材・厚板（日本製鉄など）"],
     products: ["プロダクトタンカー", "バルクキャリアー", "RO-RO船"],
-    note: "日本製鉄の厚板などの鋼材から、石油を運ぶタンカーや貨物船を組み立て、世界中の海へ送り出す。"
+    note: "日本製鉄の厚板などの鋼材から、石油を運ぶタンカーや貨物船を組み立てる。できた船は自分で海を走って、世界中の船会社へ届けられる。"
   },
   {
-    id: "ozai", name: "大在コンテナターミナル", kind: "factory", tags: "port",
-    x: 1108, y: 230,
-    materials: ["ガントリークレーン（三井E&S）", "さまざまな物資"],
-    products: ["国際コンテナ輸送"],
-    note: "大分港にある、韓国・中国・台湾・神戸との航路をもつコンテナ拠点。国際コンテナ船とトラック輸送をつなぐ。"
+    id: "ozai", name: "大在コンテナターミナル（大分港）", kind: "factory", cat: "other", illus: "container",
+    x: 1120, y: 222,
+    materials: ["国際コンテナ貨物", "RO-RO貨物（トラックごと運ぶ船）"],
+    products: ["世界とつながる海上輸送"],
+    note: "大分港でいちばんの物流拠点。韓国（釜山）・中国・台湾・神戸などとの航路があり、国際コンテナ船や大型RO-RO船とトラック輸送をつなぐ。キヤノンや旭化成メディカルなどの製品を、釜山や上海のハブ港を通じて世界へ送り出す。トラック運転手不足に対応する国内海上輸送の拠点にもなっている。"
   },
   {
-    id: "mitsui", name: "三井E&S", kind: "factory", tags: "machine",
-    x: 1090, y: 398,
-    materials: ["鋼材・厚板（日本製鉄）", "機械パーツ"],
-    products: ["コンテナ運搬用クレーン（国内シェア約7割）"],
-    note: "鋼材や機械パーツから、コンテナ船の荷役に使うガントリークレーンを組み立て、世界中の港へ出荷する。"
+    id: "mitsui", name: "三井E&S（株）大分工場", kind: "factory", cat: "metal", illus: "crane",
+    x: 1044, y: 436,
+    materials: ["鋼材・厚板（日本製鉄など）", "機械部品・パーツ"],
+    products: ["コンテナ運搬用クレーン（国内シェア約7割）", "橋"],
+    note: "鋼材や機械部品から、コンテナ船の荷役に使う巨大なガントリークレーンを組み立てる。完成したクレーンは船に載せて、世界中の港へ運ばれる。"
   },
   {
-    id: "nishidensen", name: "西日本電線", kind: "factory", tags: "machine",
-    x: 180, y: 458,
-    materials: ["銅", "アルミニウム", "プラスチック"],
+    id: "nishidensen", name: "西日本電線（株）", kind: "factory", cat: "metal", illus: "cablereel",
+    x: 210, y: 470,
+    materials: ["銅（チリ・南米など）", "アルミニウム（オーストラリアなど）", "プラスチック"],
     products: ["電線・ケーブル", "ゴム・合成樹脂製品"],
-    note: "銅やアルミニウムなどから電線・ケーブルやゴム・合成樹脂製品をつくり、九州各地へ送る。"
+    byproducts: ["銅・アルミのくず（工場内でとかして再利用）"],
+    note: "銅やアルミニウムをのばして電線やケーブルをつくり、九州各地の電力会社や工事現場へ送る。切れはしの銅やアルミは工場の中で再利用する。"
   },
   {
-    id: "oitaseishi", name: "大分製紙", kind: "factory", tags: "paper",
-    x: 348, y: 496,
-    materials: ["バージンパルプ", "古紙"],
-    products: ["トイレットペーパー", "キッチンペーパー"],
-    note: "バージンパルプや古紙からトイレットペーパーやキッチンペーパーをつくり、全国のスーパーやドラッグストアへ送る。"
+    id: "oitaseishi", name: "大分製紙（株）", kind: "factory", cat: "other", illus: "paperrolls",
+    x: 336, y: 500,
+    materials: ["古紙（国内回収）", "パルプ・木材チップ（北米・東南アジアなど）"],
+    products: ["トイレットペーパー・キッチンペーパー", "紙"],
+    byproducts: ["バーク（樹皮）・汚泥（ボイラーの燃料に）"],
+    note: "古紙やパルプをとかして紙をすき、トイレットペーパーやキッチンペーパーをつくる。製品はトラックで全国のスーパーやドラッグストアへ。かわいた樹皮や汚泥はボイラーの燃料に使う。"
+  },
+  {
+    id: "seisou", name: "大分東部清掃工場", kind: "factory", cat: "energy", illus: "incinerator",
+    x: 912, y: 458,
+    materials: ["ごみ（大分市など）"],
+    products: ["電気", "蒸気"],
+    note: "大分市などのごみを燃やし、その熱で発電する。つくった電気や蒸気は工場内やまわりの施設で使い、ごみをへらしながらエネルギーもつくっている。"
+  },
+  {
+    id: "takada", name: "高田ネームプレート（株）", kind: "factory", cat: "other", illus: "nameplate",
+    x: 648, y: 462,
+    materials: ["金属材料・プラスチックなど（国内）"],
+    products: ["プラスチックネームプレート", "メンバーシップカード", "RoHS対応品"],
+    note: "金属やプラスチックから、機械や製品にはる名前板（ネームプレート）やカードをつくる。小さな部品だけれど、いろいろな工業製品に使われている。"
   },
 
-  /* ---------- 世界から入ってくる（原料） ---------- */
-  { id: "imp_brazil",     name: "ブラジル",                 kind: "world", x: 52,   y: 168 },
-  { id: "imp_au_coal",    name: "オーストラリア",           kind: "world", x: 52,   y: 284 },
-  { id: "imp_metal",      name: "世界中（金属・樹脂）",     kind: "world", x: 52,   y: 470 },
-  { id: "imp_oil",        name: "オーストラリアなど",       kind: "world", x: 512,  y: 52  },
-  { id: "imp_lng",        name: "オーストラリアなど（LNG）", kind: "world", x: 992,  y: 52  },
-  { id: "imp_scrap_wood", name: "国内・世界中（古紙・木材）", kind: "world", x: 820,  y: 632 },
-  { id: "imp_scrap2",     name: "九州各地（古紙）",         kind: "world", x: 255,  y: 632 },
+  /* ---------- 世界・国内から入ってくる（原料） ---------- */
+  { id: "imp_brazil",     name: "ブラジル",                 kind: "world", x: 52,   y: 116 },
+  { id: "imp_au_coal",    name: "オーストラリア",           kind: "world", x: 52,   y: 200 },
+  { id: "imp_metal",      name: "世界中（銅・アルミ）",     kind: "world", x: 52,   y: 470 },
+  { id: "imp_oil",        name: "中東・オーストラリアなど", kind: "world", x: 486,  y: 52  },
+  { id: "imp_lng",        name: "オーストラリアなど（LNG）", kind: "world", x: 986,  y: 52  },
+  { id: "imp_scrap_wood", name: "国内・世界中（古紙・木材）", kind: "world", x: 806,  y: 632 },
+  { id: "imp_scrap2",     name: "九州各地（古紙）",         kind: "world", x: 236,  y: 632 },
+  { id: "imp_gomi",       name: "大分市などのごみ",         kind: "world", x: 986,  y: 632 },
+  { id: "imp_metal_parts", name: "金属材料など（国内）",     kind: "world", x: 1232, y: 528 },
 
   /* ---------- ここから出ていく（製品・電気・ガス） ---------- */
-  { id: "dst_national",   name: "全国（自動車・建材）",         kind: "dest", x: 52,   y: 388 },
-  { id: "dst_gs",         name: "九州のガソリンスタンド",       kind: "dest", x: 336,  y: 52  },
-  { id: "dst_power",      name: "九州全域",                     kind: "dest", x: 800,  y: 52  },
-  { id: "dst_gas",        name: "ガス会社",                     kind: "dest", x: 1230, y: 168 },
-  { id: "dst_ships",      name: "世界中の海",                   kind: "dest", x: 1230, y: 300 },
-  { id: "dst_cranes",     name: "世界中の港湾",                 kind: "dest", x: 1230, y: 432 },
-  { id: "dst_kyushu_wire", name: "九州各地",                    kind: "dest", x: 110,  y: 632 },
-  { id: "dst_stores",     name: "全国のスーパー・ドラッグストア", kind: "dest", x: 388,  y: 632 },
-  { id: "dst_factories",  name: "国内外の工場",                 kind: "dest", x: 528,  y: 632 },
-  { id: "dst_cardboard",  name: "国内の段ボールメーカー",       kind: "dest", x: 668,  y: 632 },
-  { id: "dst_containers", name: "韓国・中国・台湾・神戸",       kind: "dest", x: 1055, y: 632 }
+  { id: "dst_national",   name: "九州・全国の自動車工場・建材へ", kind: "dest", x: 52,   y: 296 },
+  { id: "dst_cement",     name: "セメント・道路の材料へ",       kind: "dest", x: 52,   y: 376 },
+  { id: "dst_gs",         name: "九州のガソリンスタンド",       kind: "dest", x: 300,  y: 52  },
+  { id: "dst_power",      name: "九州全域（電気）",             kind: "dest", x: 760,  y: 52  },
+  { id: "dst_gas",        name: "都市ガス会社",                 kind: "dest", x: 1232, y: 138 },
+  { id: "dst_ships",      name: "世界中の海（船）",             kind: "dest", x: 1232, y: 236 },
+  { id: "dst_local",      name: "近くの工場・施設へ",           kind: "dest", x: 1232, y: 336 },
+  { id: "dst_cranes",     name: "世界中の港湾（クレーン）",     kind: "dest", x: 1232, y: 436 },
+  { id: "dst_kyushu_wire", name: "九州各地（電線）",            kind: "dest", x: 110,  y: 632 },
+  { id: "dst_stores",     name: "全国のスーパー・ドラッグストア", kind: "dest", x: 372,  y: 632 },
+  { id: "dst_factories",  name: "国内外の工場へ",               kind: "dest", x: 516,  y: 632 },
+  { id: "dst_cardboard",  name: "国内の段ボールメーカーへ",     kind: "dest", x: 656,  y: 632 },
+  { id: "dst_containers", name: "釜山・上海ハブ経由で世界へ",   kind: "dest", x: 1140, y: 632 }
 ];
 
 const FLOWS = [
   /* 原料の輸入（青） */
-  { from: "imp_brazil",     to: "nissetsu",    label: "鉄鉱石",             kind: "import" },
-  { from: "imp_au_coal",    to: "nissetsu",    label: "石炭",               kind: "import" },
-  { from: "imp_au_coal",    to: "kkh",         label: "石炭",               kind: "import" },
-  { from: "imp_oil",        to: "eneos",       label: "原油",               kind: "import" },
-  { from: "imp_lng",        to: "oitalng",     label: "液化天然ガス",       kind: "import" },
+  { from: "imp_brazil",     to: "nissetsu",    label: "鉄鉱石",                 kind: "import" },
+  { from: "imp_au_coal",    to: "nissetsu",    label: "石炭・原料炭",           kind: "import" },
+  { from: "imp_au_coal",    to: "kkh",         label: "石炭",                   kind: "import" },
+  { from: "imp_oil",        to: "eneos",       label: "原油",                   kind: "import" },
+  { from: "imp_lng",        to: "oitalng",     label: "液化天然ガス",           kind: "import" },
   { from: "imp_metal",      to: "nishidensen", label: "銅・アルミ・プラスチック", kind: "import" },
-  { from: "imp_scrap_wood", to: "oji",         label: "古紙・木材チップ",   kind: "import" },
-  { from: "imp_scrap2",     to: "oitaseishi",  label: "古紙",               kind: "import" },
+  { from: "imp_scrap_wood", to: "oji",         label: "古紙・木材チップ",       kind: "import" },
+  { from: "imp_scrap2",     to: "oitaseishi",  label: "古紙",                   kind: "import" },
+  { from: "imp_gomi",       to: "seisou",      label: "ごみ",                   kind: "import" },
+  { from: "imp_metal_parts", to: "takada",     label: "金属材料・プラスチック",  kind: "import" },
 
   /* 工場どうしのやり取り（赤） */
   { from: "nissetsu", to: "kkh",    label: "副生ガス・残重油",       kind: "exchange" },
   { from: "nissetsu", to: "mnz",    label: "厚板（造船用）",         kind: "exchange" },
   { from: "nissetsu", to: "mitsui", label: "鋼材・厚板",             kind: "exchange" },
-  { from: "eneos",    to: "showa",  label: "ナフサ",                 kind: "exchange" },
-  { from: "showa",    to: "sumika", label: "基礎化学原料・電子材料原料", kind: "exchange" },
+  { from: "eneos",    to: "showa",  label: "エチレン・プロピレン",   kind: "exchange" },
+  { from: "eneos",    to: "sumika", label: "ナフサ",                 kind: "exchange" },
   { from: "oitalng",  to: "kyuden", label: "天然ガス",               kind: "exchange" },
   { from: "mitsui",   to: "ozai",   label: "ガントリークレーン",     kind: "exchange" },
 
-  /* 電気・ガス（黄） */
-  { from: "kkh",     to: "nissetsu",  label: "電力",           kind: "energy" },
-  { from: "kkh",     to: "kyuden",    label: "電力",           kind: "energy" },
-  { from: "oitalng", to: "dst_gas",   label: "天然ガス",       kind: "energy" },
+  /* 電気・ガス・蒸気（黄） */
+  { from: "kkh",     to: "nissetsu",  label: "電気・蒸気",       kind: "energy" },
+  { from: "kkh",     to: "kyuden",    label: "電気",             kind: "energy" },
+  { from: "oitalng", to: "dst_gas",   label: "天然ガス",         kind: "energy" },
   { from: "kyuden",  to: "dst_power", label: "電気（九州全域）", kind: "energy" },
-  { from: "eneos",   to: "dst_power", label: "電気",           kind: "energy" },
+  { from: "eneos",   to: "dst_power", label: "電気・蒸気",       kind: "energy" },
+  { from: "seisou",  to: "dst_local", label: "電気・蒸気",       kind: "energy" },
+  { from: "seisou",  to: "mitsui",    label: "電気・蒸気",       kind: "energy" },
 
   /* 製品の出荷（緑） */
   { from: "nissetsu",    to: "dst_national",   label: "鋼板（自動車・建材）",     kind: "product" },
+  { from: "nissetsu",    to: "dst_cement",     label: "鉄スラグ",               kind: "product" },
   { from: "eneos",       to: "dst_gs",         label: "ガソリン・軽油・灯油",     kind: "product" },
+  { from: "showa",       to: "dst_factories",  label: "塩化ビニル樹脂",         kind: "product" },
   { from: "sumika",      to: "dst_factories",  label: "農薬・医薬中間体ほか",     kind: "product" },
   { from: "oji",         to: "dst_cardboard",  label: "コンテナ原紙・段ボール原紙", kind: "product" },
+  { from: "takada",      to: "dst_factories",  label: "ネームプレート",         kind: "product" },
   { from: "mnz",         to: "dst_ships",      label: "タンカー・貨物船",         kind: "product" },
   { from: "mitsui",      to: "dst_cranes",     label: "コンテナ運搬用クレーン",   kind: "product" },
-  { from: "ozai",        to: "dst_containers", label: "国際コンテナ輸送",         kind: "product" },
+  { from: "ozai",        to: "dst_containers", label: "国際コンテナ・RO-RO",     kind: "product" },
   { from: "nishidensen", to: "dst_kyushu_wire", label: "電線・ケーブル",          kind: "product" },
   { from: "oitaseishi",  to: "dst_stores",     label: "トイレットペーパーほか",   kind: "product" }
 ];
 
 const FLOW_KINDS = {
-  import:   { label: "原料の輸入",        color: "#2f6f92" },
+  import:   { label: "原料の輸入・調達",     color: "#2f6f92" },
   exchange: { label: "工場どうしのやり取り", color: "#c15b3c" },
-  energy:   { label: "電気・ガス",         color: "#d29a2b" },
-  product:  { label: "製品の出荷",         color: "#5f7d43" }
+  energy:   { label: "電気・ガス・蒸気",     color: "#d29a2b" },
+  product:  { label: "製品の出荷",           color: "#5f7d43" }
 };
 
-/* 手書き地図のことば（ヘッダー・フッターで使用） */
+const CAT_LABELS = {
+  metal:  "鉄鋼・金属",
+  chem:   "石油・化学",
+  energy: "電力・エネルギー",
+  other:  "その他"
+};
+
+/* 手書き地図・大分県資料のことば */
 const STORY = {
   school: "東大分小学校 5年",
   title1: "世界と大分がつながる",
   title2: "工場・港 大調査地図",
   trigger: "去年しらべた家の近くの工業地域で、何が作られているのか、それらがどこへいくのかが気になったので調べてみました。",
-  port: "大分港は、輸出では鋼材・非金属鉱物・化学製品など、輸入では鉄鉱石・石炭・原油などを主に取りあつかっています。取扱貨物量は全国11位、九州では北九州港に次いで2位です（いずれも令和4年）。",
-  summary: "調べる前は、大分の工場はそれぞれ別に製品をつくっていると思っていました。でも調べてみると、近くの工場どうしで原料や製品、電気、ガスなどをやり取りしていることが分かりました。工場に近づくと、たくさんの船やトラックが出入りしているのが見えました。大きな港や道路があって、多くの工場が集まってコンビナートとして発展したのだなと思いました。身近にある大分の工場が、世界の人々の生活を支えていることを知って、すごいと思いました。"
+  port: "大分港は、大分市の沿岸およそ20kmに広がる7つの地区からなる国際拠点港湾です。輸入では鉄鉱石・石炭・原油・LNGなど、輸出では鋼材・化学品・機械などを主に取りあつかい、重さでみた貨物量は九州で2位（全国12位前後）。輸入した原料を臨海の工場で製品にして、国内外へ送り出しています。",
+  summary: "調べる前は、大分の工場はそれぞれ別に製品をつくっていると思っていました。でも調べてみると、近くの工場どうしで原料や製品、電気、ガス、蒸気などをやり取りしていることが分かりました。工場に近づくと、たくさんの船やトラックが出入りしているのが見えました。大きな港や道路があって、多くの工場が集まってコンビナートとして発展したのだなと思いました。身近にある大分の工場が、世界の人々の生活を支えていることを知って、すごいと思いました。"
+};
+
+/* ---------------------------------------------------------------------------
+   大分港のデータ（「大分港のしごと」セクションのグラフに使用）
+   出典：大分県・国土交通省の資料をもとにした概数（令和期）
+   -------------------------------------------------------------------------- */
+const PORT = {
+  stats: [
+    { value: "約6,800", unit: "万トン／年", label: "貨物取扱量（重さ）", sub: "九州2位・全国12位前後" },
+    { value: "約2.5〜3.0", unit: "兆円／年", label: "貿易額（金額）", sub: "" },
+    { value: "7", unit: "地区", label: "港をつくる地区", sub: "沿岸およそ20km" },
+    { value: "約2倍", unit: "", label: "重さでみると博多港の", sub: "素材・エネルギーの拠点港" }
+  ],
+  /* 重さでみた港の大きさくらべ（概数） */
+  weightCompare: {
+    unit: "万トン／年",
+    note: "重さ（重量ベース）の年間貨物取扱量。おおよその数。",
+    bars: [
+      { name: "大分港", value: 6800, highlight: true },
+      { name: "博多港", value: 3100, highlight: false }
+    ]
+  },
+  /* 港をつくる7つの地区 */
+  districts: [
+    { name: "西大分地区", role: "関西（神戸）行きのフェリー。人とトラックの旅客ターミナル" },
+    { name: "住吉地区", role: "まちの物流倉庫、石油製品の油そう所" },
+    { name: "津留地区", role: "大分川の河口。新大分発電所、LNGの受け入れ" },
+    { name: "乙津地区", role: "石油化学コンビナートの専用ふ頭。原料の受け入れと製品の出荷" },
+    { name: "鶴崎地区", role: "日本製鉄の超大型専用港。鉄鉱石・石炭の輸入、鋼材の出荷" },
+    { name: "大在地区", role: "大在コンテナターミナル。国際コンテナ船・大型RO-RO船の中心" },
+    { name: "日吉原地区", role: "造船ドック、大型プラントや新造船の出荷、物流用地" }
+  ],
+  /* 3ステップの物流モデル */
+  model: [
+    {
+      step: "1. 受け入れる（輸入）",
+      color: "import",
+      text: "中東・オーストラリア・南米などから、鉄鉱石・石炭・原油・LNG・銅鉱石を大型のバルク船やタンカーで直接受け入れる。"
+    },
+    {
+      step: "2. 工場で加工する",
+      color: "exchange",
+      text: "日本製鉄・クラサスケミカル・住友化学・南日本造船などの工場で、金属・化学品・機械・船などの製品に変える。となりの工場と電気・ガス・蒸気もやり取りする。"
+    },
+    {
+      step: "3. 送り出す（国内・海外）",
+      color: "product",
+      text: "国内へは RO-RO船やフェリーで関東・関西・瀬戸内へ（トラックにたよらない海上輸送）。海外へは大在コンテナターミナルや専用船で、釜山・上海などのハブ港を通じて世界へ。"
+    }
+  ],
+  /* 主な輸入品・輸出品 */
+  trade: {
+    imports: [
+      { item: "鉄鉱石・原料炭", who: "日本製鉄", where: "オーストラリア・ブラジルなど" },
+      { item: "原油・LNG・ナフサ", who: "ENEOS・九州電力・大分エル・エヌ・ジー", where: "中東・オーストラリアなど" },
+      { item: "銅鉱石", who: "（銅の製錬）", where: "チリ・ペルーなど" },
+      { item: "工場用の部品・原料", who: "住友化学・電子/医療メーカー", where: "中国・韓国・台湾・東南アジア" },
+      { item: "日用品・生活雑貨", who: "県内の小売・流通", where: "中国・韓国（釜山ハブ経由）" }
+    ],
+    exports: [
+      { item: "高級鋼材・厚板", who: "日本製鉄", where: "アジア・北米・欧州など" },
+      { item: "基礎化学品・樹脂", who: "コンビナート各社", where: "アジア各国" },
+      { item: "新造船", who: "南日本造船", where: "世界の海運会社（船が自走）" },
+      { item: "コンテナ運搬用クレーン", who: "三井E&S", where: "世界中の港湾" },
+      { item: "精密機器・医療機器", who: "電子/医療メーカー", where: "釜山・上海ハブ経由で世界へ" }
+    ]
+  },
+  /* 運び方 */
+  transport: [
+    { icon: "🚢", title: "国際バルク船・タンカー", text: "鉄鉱石・石炭・原油・LNGなどの原料を、海外から大量に直接運び入れる。" },
+    { icon: "📦", title: "国際コンテナ船・専用船", text: "鋼材・化学品・クレーン・精密機器などの製品を、釜山・上海のハブ港を通じて世界へ。" },
+    { icon: "🛳️", title: "国内 RO-RO船・フェリー", text: "トラックの台車ごと船に積み、関東・関西・瀬戸内へ。運転手不足に対応した海上輸送。" },
+    { icon: "🚚", title: "トラック（陸送）", text: "九州内の部品や資材を運び入れ、鋼板や石油製品、樹脂を福岡の自動車工場や九州各地へ運び出す。" }
+  ]
 };
 
 
@@ -848,9 +1324,18 @@ const STORY = {
   document.getElementById("port").textContent = STORY.port;
   document.getElementById("summary").textContent = STORY.summary;
 
-  /* ---------- 凡例（フィルター） ---------- */
+  /* ---------- 凡例（フィルター＋工場の色分け） ---------- */
   const kindsOn = new Set(Object.keys(FLOW_KINDS));
   const legend = document.getElementById("legend");
+  const catLegend = document.getElementById("catLegend");
+  if (catLegend && typeof CAT_LABELS !== "undefined") {
+    Object.entries(CAT_LABELS).forEach(([cat, label]) => {
+      const s = document.createElement("span");
+      s.className = "cat-key cat-" + cat;
+      s.innerHTML = `<span class="cat-dot"></span>${label}`;
+      catLegend.appendChild(s);
+    });
+  }
   Object.entries(FLOW_KINDS).forEach(([kind, info]) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -966,38 +1451,63 @@ const STORY = {
     flowItems.push({ data: f, path, label, from: f.from, to: f.to });
   });
 
+  /* ---------- イラスト（工場の絵） ---------- */
+  function illusNode(key, w) {
+    const markup = (typeof ILLUS !== "undefined" && ILLUS[key]) || "";
+    const box = (typeof ILLUS_VIEWBOX !== "undefined") ? ILLUS_VIEWBOX : "0 0 100 74";
+    const s = el("svg", { class: "illus", viewBox: box, width: w, height: w * 0.74 });
+    s.setAttribute("overflow", "visible");
+    s.innerHTML = markup;
+    return s;
+  }
+
   /* ---------- ノード（ふせん） ---------- */
+  function shortName(name) {
+    return (name || "")
+      .replace(/（株）/g, "")
+      .replace(/（九州製鉄所 大分地区）/g, "")
+      .replace(/（大分港）/g, "")
+      .replace(/^九州電力\s*/g, "")
+      .replace(/\s*大分工場$/g, "")
+      .replace(/\s*大分事業所$/g, "");
+  }
   const nodeEls = {};
   NODES.forEach(n => {
     const isFactory = n.kind === "factory";
     const fs = isFactory ? 17 : 15;
     const maxChars = isFactory ? 9 : 8;
-    const lines = wrapLabel(n.name, maxChars).slice(0, 3);
+    const labelText = isFactory ? shortName(n.name) : n.name;
+    const lines = wrapLabel(labelText, maxChars).slice(0, 3);
     const maxLen = Math.max.apply(null, lines.map(l => l.length));
-    const w = clamp(maxLen * fs * 1.02 + 22, 64, 240);
+    const w = clamp(maxLen * fs * 1.02 + 22, 64, 250);
     const lh = fs * 1.5;
     const h = lines.length * lh + 14;
+    const illW = 54, illH = illW * 0.74;
 
     const cx = clamp(n.x, w / 2 + 4, VB_W - w / 2 - 4);
-    const cy = clamp(n.y, h / 2 + 6, VB_H - h / 2 - 6);
+    const topPad = isFactory ? illH + 4 : 0;
+    const cy = clamp(n.y, h / 2 + topPad + 4, VB_H - h / 2 - 6);
 
-    const g = el("g", { class: `node ${n.kind} t-${n.tags || "none"}`, tabindex: "0", role: "button" });
+    const g = el("g", { class: `node ${n.kind} cat-${n.cat || "none"}`, tabindex: "0", role: "button" });
     g.setAttribute("aria-label", n.name);
     g.setAttribute("transform", `translate(${cx} ${cy})`);
     const rot = ((n.id.charCodeAt(0) + n.id.length) % 5 - 2) * 0.9;
 
     const inner = el("g", { transform: `rotate(${isFactory ? rot : 0})` });
 
-    if (isFactory) {
-      inner.appendChild(el("rect", {
-        class: "chip-tab", x: -w / 2 + 12, y: -h / 2 - 5, width: w - 24, height: 8, rx: 2
-      }));
+    if (isFactory && n.illus) {
+      const im = illusNode(n.illus, illW);
+      im.setAttribute("x", -illW / 2);
+      im.setAttribute("y", -h / 2 - illH - 1);
+      inner.appendChild(im);
     }
     inner.appendChild(el("rect", {
       class: "chip", x: -w / 2, y: -h / 2, width: w, height: h, rx: 8
     }));
     if (isFactory) {
-      inner.appendChild(el("circle", { class: "dot", cx: -w / 2 + 12, cy: -h / 2 + 12, r: 4 }));
+      inner.appendChild(el("rect", {
+        class: "cat-bar", x: -w / 2 + 8, y: h / 2 - 5, width: w - 16, height: 3, rx: 1.5
+      }));
     }
     const text = el("text", {});
     const startY = -((lines.length - 1) * lh) / 2;
@@ -1101,7 +1611,23 @@ const STORY = {
     if (!id || playAll) { card.classList.add("is-empty"); return; }
     const n = nodeById[id];
     card.classList.remove("is-empty");
+    card.classList.toggle("is-factory", n.kind === "factory");
     document.getElementById("infoName").textContent = n.name;
+
+    const illusWrap = document.getElementById("infoIllus");
+    const catTag = document.getElementById("infoCat");
+    if (n.kind === "factory" && n.illus && typeof ILLUS !== "undefined" && ILLUS[n.illus]) {
+      const box = (typeof ILLUS_VIEWBOX !== "undefined") ? ILLUS_VIEWBOX : "0 0 100 74";
+      illusWrap.innerHTML = `<svg viewBox="${box}" class="illus">${ILLUS[n.illus]}</svg>`;
+      illusWrap.hidden = false;
+      illusWrap.className = "info-illus cat-" + (n.cat || "none");
+      catTag.textContent = (typeof CAT_LABELS !== "undefined" && CAT_LABELS[n.cat]) || "";
+      catTag.className = "info-cat cat-" + (n.cat || "none");
+      catTag.hidden = !catTag.textContent;
+    } else {
+      illusWrap.hidden = true;
+      catTag.hidden = true;
+    }
 
     const outs = flowItems.filter(f => f.from === id && flowVisible(f));
     const ins = flowItems.filter(f => f.to === id && flowVisible(f));
@@ -1117,6 +1643,13 @@ const STORY = {
 
     fillList("infoMaterials", n.materials);
     fillList("infoProducts", n.products);
+    const byRow = document.getElementById("infoByRow");
+    if (n.byproducts && n.byproducts.length) {
+      fillList("infoByproducts", n.byproducts);
+      byRow.hidden = false;
+    } else {
+      byRow.hidden = true;
+    }
 
     const conn = document.getElementById("infoConnections");
     conn.innerHTML = "";
@@ -1190,7 +1723,96 @@ const STORY = {
     else { rafId = null; lastT = 0; }
   }
 
+  /* ---------- 大分港のしごと（データ＋グラフ） ---------- */
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
+  function renderPort() {
+    if (typeof PORT === "undefined") return;
+    const lead = document.getElementById("portLead");
+    if (lead) lead.textContent = STORY.port;
+    const src = document.getElementById("portSrc");
+    if (src) src.textContent = "出典：大分県「大分県の港湾」・国土交通省の資料などをもとにした概数。手書き地図（東大分小学校5年）とあわせてまとめました。";
+
+    const sr = document.getElementById("portStats");
+    PORT.stats.forEach(s => {
+      const d = document.createElement("div");
+      d.className = "stat";
+      d.innerHTML = `<div class="stat-v">${esc(s.value)}<span class="stat-u">${esc(s.unit)}</span></div>` +
+        `<div class="stat-l">${esc(s.label)}</div>` +
+        (s.sub ? `<div class="stat-s">${esc(s.sub)}</div>` : "");
+      sr.appendChild(d);
+    });
+
+    buildWeightChart();
+
+    const mw = document.getElementById("portModel");
+    PORT.model.forEach((m, i) => {
+      const d = document.createElement("div");
+      d.className = "model-step k-" + m.color;
+      d.innerHTML = `<div class="model-h">${esc(m.step)}</div><p>${esc(m.text)}</p>`;
+      mw.appendChild(d);
+      if (i < PORT.model.length - 1) {
+        const a = document.createElement("div");
+        a.className = "model-arrow"; a.setAttribute("aria-hidden", "true"); a.textContent = "▼";
+        mw.appendChild(a);
+      }
+    });
+
+    fillTrade("portImports", PORT.trade.imports);
+    fillTrade("portExports", PORT.trade.exports);
+
+    const tw = document.getElementById("portTransport");
+    PORT.transport.forEach(t => {
+      const d = document.createElement("div");
+      d.className = "tp-card";
+      d.innerHTML = `<div class="tp-icon" aria-hidden="true">${t.icon}</div>` +
+        `<div class="tp-body"><div class="tp-t">${esc(t.title)}</div><p>${esc(t.text)}</p></div>`;
+      tw.appendChild(d);
+    });
+
+    const dw = document.getElementById("portDistricts");
+    PORT.districts.forEach(x => {
+      const li = document.createElement("li");
+      li.innerHTML = `<b>${esc(x.name)}</b><span>${esc(x.role)}</span>`;
+      dw.appendChild(li);
+    });
+  }
+  function fillTrade(elId, rows) {
+    const ul = document.getElementById(elId);
+    rows.forEach(r => {
+      const li = document.createElement("li");
+      li.innerHTML = `<b>${esc(r.item)}</b><span>${esc(r.who)}／${esc(r.where)}</span>`;
+      ul.appendChild(li);
+    });
+  }
+  function buildWeightChart() {
+    const wc = PORT.weightCompare;
+    const svg = document.getElementById("weightChart");
+    const note = document.getElementById("weightNote");
+    if (!svg) return;
+    if (note) note.textContent = "たんい：" + wc.unit + "。" + wc.note;
+    const W = 660, rowH = 62, padL = 88, padR = 96, top = 8;
+    const max = Math.max.apply(null, wc.bars.map(b => b.value));
+    const chartW = W - padL - padR;
+    const H = top + wc.bars.length * rowH + 6;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    let h = `<line class="wc-axis" x1="${padL}" y1="${top}" x2="${padL}" y2="${H - 6}"/>`;
+    wc.bars.forEach((b, i) => {
+      const y = top + i * rowH;
+      const bw = Math.max(6, chartW * b.value / max);
+      const bh = 20;
+      const by = y + (rowH - bh) / 2;
+      h += `<text class="wc-name" x="${padL - 12}" y="${y + rowH / 2}" text-anchor="end" dominant-baseline="central">${esc(b.name)}</text>`;
+      h += `<rect class="wc-bar ${b.highlight ? "is-hi" : ""}" x="${padL}" y="${by}" width="${bw}" height="${bh}" rx="4">` +
+        `<title>${esc(b.name)}：約${b.value.toLocaleString()} ${wc.unit}</title></rect>`;
+      h += `<text class="wc-val" x="${padL + bw + 10}" y="${y + rowH / 2}" dominant-baseline="central">約${b.value.toLocaleString()}</text>`;
+    });
+    svg.innerHTML = h;
+  }
+
   /* ---------- スタート ---------- */
+  renderPort();
   applyState();
 })();
 
