@@ -19,6 +19,8 @@
   --paper-hi:   #e5d7b8;
   --paper-lo:   #cbb891;
   --land:       #e7dcc0;
+  --sea:        #b3ccd2;
+  --river:      #a9c6cf;
   --ink:        #33291b;
   --ink-soft:   #6b5c44;
   --accent:     #b8402f;   /* タイトルの丸 */
@@ -39,6 +41,8 @@
     --paper-hi: #363029;
     --paper-lo: #211d18;
     --land:     #3a332a;
+    --sea:      #33454c;
+    --river:    #35474e;
     --ink:      #efe6d3;
     --ink-soft: #b8ab92;
     --accent:   #e0755f;
@@ -60,8 +64,7 @@ body {
   font-family: "Zen Kurenaido", "Yu Gothic", "Hiragino Sans", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(120% 90% at 50% -10%, var(--paper-hi), transparent 60%),
-    repeating-linear-gradient(115deg, var(--paper) 0 7px, var(--paper-lo) 7px 14px),
+    radial-gradient(130% 100% at 50% -10%, var(--paper-hi), transparent 65%),
     var(--paper);
   background-attachment: fixed;
   line-height: 1.85;
@@ -73,11 +76,11 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: .5;
+  opacity: .18;
   mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
 }
-@media (prefers-color-scheme: dark) { .paper-noise { mix-blend-mode: overlay; opacity: .25; } }
+@media (prefers-color-scheme: dark) { .paper-noise { mix-blend-mode: overlay; opacity: .12; } }
 
 main, .site-header, .site-footer { position: relative; z-index: 1; }
 
@@ -250,20 +253,24 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 
 #map { display: block; width: 100%; height: auto; touch-action: manipulation; position: relative; z-index: 1; }
 
-/* 陸・海 */
+/* 陸・海・川 */
 .land {
   fill: var(--land);
   stroke: var(--ink);
-  stroke-width: 2.4;
+  stroke-width: 2.2;
   filter: url(#rough);
 }
-.sea-line {
-  fill: none;
-  stroke: color-mix(in srgb, var(--c-import) 70%, transparent);
+.sea {
+  fill: var(--sea);
+  stroke: color-mix(in srgb, var(--ink) 45%, transparent);
   stroke-width: 2;
-  stroke-dasharray: 2 7;
-  stroke-linecap: round;
-  opacity: .6;
+  filter: url(#rough);
+}
+.river {
+  fill: var(--river);
+  stroke: color-mix(in srgb, var(--ink) 30%, transparent);
+  stroke-width: 1.5;
+  filter: url(#roughSoft);
 }
 .road {
   fill: none;
@@ -278,6 +285,20 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   stroke: var(--paper-hi);
   stroke-width: 1.6;
   stroke-dasharray: 6 8;
+}
+.geo-label {
+  font-family: "Yomogi", cursive;
+  fill: color-mix(in srgb, var(--ink) 62%, transparent);
+  font-size: 14px;
+  font-style: italic;
+  pointer-events: none;
+}
+.geo-sea {
+  font-family: "Kaisei Decol", serif;
+  fill: color-mix(in srgb, var(--ink) 42%, transparent);
+  font-size: 24px;
+  letter-spacing: .12em;
+  pointer-events: none;
 }
 
 /* 流れ（矢印） */
@@ -516,7 +537,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 
   <section class="map-wrap">
     <div class="map-stage">
-    <svg id="map" viewBox="0 0 1280 720" role="img" aria-labelledby="mapTitle">
+    <svg id="map" viewBox="0 0 1280 660" role="img" aria-labelledby="mapTitle">
       <title id="mapTitle">大分臨海工業地帯 原料・製品の流れ地図</title>
       <defs>
         <filter id="rough" x="-20%" y="-20%" width="140%" height="140%">
@@ -605,117 +626,117 @@ const NODES = [
   /* ---------- 工場 ---------- */
   {
     id: "nissetsu", name: "日本製鉄", kind: "factory", tags: "steel",
-    x: 265, y: 335,
+    x: 300, y: 302,
     materials: ["鉄鉱石（ブラジル）", "石炭（オーストラリア）"],
     products: ["熱延鋼板（自動車用など）", "厚板（造船用など）", "副生ガス・残重油"],
     note: "鉄鉱石と石炭を船で運び入れ、熱延鋼板や厚板をつくる。厚板は近くの造船所やクレーン工場へ、鋼板は自動車・建材として全国へ。工場から出る副生ガスや残重油は発電所の燃料になる。"
   },
   {
     id: "kkh", name: "九州共同発電", kind: "factory", tags: "energy",
-    x: 150, y: 208,
+    x: 158, y: 222,
     materials: ["石炭（オーストラリア）", "副生ガス・残重油（日本製鉄）"],
     products: ["電力"],
     note: "火力発電所。石炭に加えて、となりの日本製鉄から出る副生ガスや残重油も燃料にする。つくった電気は九州電力と日本製鉄へ送る。"
   },
   {
     id: "showa", name: "クラサスケミカル大分コンビナート", kind: "factory", tags: "chem",
-    x: 455, y: 235,
+    x: 540, y: 270,
     materials: ["ナフサ（ENEOS大分製油所）"],
     products: ["エチレン", "プロピレン", "石油化学の基礎製品"],
     note: "製油所から届くナフサを分解して、エチレンやプロピレンなどの石油化学の「もと」をつくり、近くの化学工場へ送る。"
   },
   {
     id: "eneos", name: "ENEOS大分製油所", kind: "factory", tags: "energy",
-    x: 600, y: 225,
+    x: 762, y: 268,
     materials: ["原油（オーストラリアなど）"],
     products: ["ガソリン・軽油・灯油", "ナフサ", "石油化学製品", "電気"],
     note: "原油からガソリン・軽油・灯油をつくり、九州のガソリンスタンドへ。ナフサは石油化学工場へ送り、電気もつくる。"
   },
   {
     id: "sumika", name: "住友化学 大分工場", kind: "factory", tags: "chem",
-    x: 470, y: 420,
+    x: 505, y: 408,
     materials: ["基礎化学原料・電子材料原料（コンビナート）", "液体・粉体の化学原料"],
     products: ["農薬", "医薬品の中間体", "タイヤ用接着剤・添加剤"],
     note: "コンビナートから届く化学原料を使って、農薬や医薬品の中間体、タイヤ用の接着剤や添加剤などをつくり、国内外の工場へ送る。"
   },
   {
     id: "oji", name: "王子マテリア", kind: "factory", tags: "paper",
-    x: 675, y: 340,
+    x: 612, y: 328,
     materials: ["古紙", "木材チップ", "パルプ"],
     products: ["コンテナ原紙", "段ボール原紙"],
     note: "古紙や木材チップ、パルプからコンテナ原紙・段ボール原紙をつくり、国内の段ボールメーカーへ送る。"
   },
   {
     id: "kyuden", name: "九州電力 新大分発電所", kind: "factory", tags: "energy",
-    x: 840, y: 228,
+    x: 862, y: 232,
     materials: ["LNG（液化天然ガス）", "電力（九州共同発電）"],
     products: ["電気"],
     note: "九州でいちばん大きな火力発電所。LNGを燃料に、九州全体の電気の約3分の1をつくって九州全域へ送る。"
   },
   {
     id: "oitalng", name: "大分エル・エヌ・ジー", kind: "factory", tags: "energy",
-    x: 975, y: 265,
+    x: 948, y: 286,
     materials: ["LNG（オーストラリアなど）"],
     products: ["天然ガス"],
     note: "海外からLNG（液化天然ガス）を船で受け入れ、九州電力の発電所やガス会社へ送り出す。日本のLNG輸入量は世界全体の約20％（2024年）。"
   },
   {
     id: "mnz", name: "南日本造船", kind: "factory", tags: "ship",
-    x: 910, y: 345,
+    x: 1070, y: 300,
     materials: ["鋼材・厚板（日本製鉄）"],
     products: ["プロダクトタンカー", "バルクキャリアー", "RO-RO船"],
     note: "日本製鉄の厚板などの鋼材から、石油を運ぶタンカーや貨物船を組み立て、世界中の海へ送り出す。"
   },
   {
-    id: "ozai", name: "大分港 大在コンテナターミナル", kind: "factory", tags: "port",
-    x: 845, y: 468,
+    id: "ozai", name: "大在コンテナターミナル", kind: "factory", tags: "port",
+    x: 1108, y: 230,
     materials: ["ガントリークレーン（三井E&S）", "さまざまな物資"],
     products: ["国際コンテナ輸送"],
-    note: "韓国・中国・台湾・神戸との航路がある大分港のコンテナ拠点。国際コンテナ船とトラック輸送をつなぐ。"
+    note: "大分港にある、韓国・中国・台湾・神戸との航路をもつコンテナ拠点。国際コンテナ船とトラック輸送をつなぐ。"
   },
   {
     id: "mitsui", name: "三井E&S", kind: "factory", tags: "machine",
-    x: 975, y: 495,
+    x: 1090, y: 398,
     materials: ["鋼材・厚板（日本製鉄）", "機械パーツ"],
     products: ["コンテナ運搬用クレーン（国内シェア約7割）"],
     note: "鋼材や機械パーツから、コンテナ船の荷役に使うガントリークレーンを組み立て、世界中の港へ出荷する。"
   },
   {
     id: "nishidensen", name: "西日本電線", kind: "factory", tags: "machine",
-    x: 185, y: 460,
+    x: 180, y: 458,
     materials: ["銅", "アルミニウム", "プラスチック"],
     products: ["電線・ケーブル", "ゴム・合成樹脂製品"],
     note: "銅やアルミニウムなどから電線・ケーブルやゴム・合成樹脂製品をつくり、九州各地へ送る。"
   },
   {
     id: "oitaseishi", name: "大分製紙", kind: "factory", tags: "paper",
-    x: 430, y: 520,
+    x: 348, y: 496,
     materials: ["バージンパルプ", "古紙"],
     products: ["トイレットペーパー", "キッチンペーパー"],
     note: "バージンパルプや古紙からトイレットペーパーやキッチンペーパーをつくり、全国のスーパーやドラッグストアへ送る。"
   },
 
   /* ---------- 世界から入ってくる（原料） ---------- */
-  { id: "imp_brazil",     name: "ブラジル",                 kind: "world", x: 52,   y: 175 },
-  { id: "imp_au_coal",    name: "オーストラリア",           kind: "world", x: 52,   y: 295 },
-  { id: "imp_metal",      name: "世界中（金属・樹脂）",     kind: "world", x: 52,   y: 505 },
-  { id: "imp_oil",        name: "オーストラリアなど",       kind: "world", x: 625,  y: 52  },
-  { id: "imp_lng",        name: "オーストラリアなど（LNG）", kind: "world", x: 965,  y: 52  },
-  { id: "imp_scrap_wood", name: "国内・世界中（古紙・木材）", kind: "world", x: 820,  y: 688 },
-  { id: "imp_scrap2",     name: "九州各地（古紙）",         kind: "world", x: 255,  y: 688 },
+  { id: "imp_brazil",     name: "ブラジル",                 kind: "world", x: 52,   y: 168 },
+  { id: "imp_au_coal",    name: "オーストラリア",           kind: "world", x: 52,   y: 284 },
+  { id: "imp_metal",      name: "世界中（金属・樹脂）",     kind: "world", x: 52,   y: 470 },
+  { id: "imp_oil",        name: "オーストラリアなど",       kind: "world", x: 512,  y: 52  },
+  { id: "imp_lng",        name: "オーストラリアなど（LNG）", kind: "world", x: 992,  y: 52  },
+  { id: "imp_scrap_wood", name: "国内・世界中（古紙・木材）", kind: "world", x: 820,  y: 632 },
+  { id: "imp_scrap2",     name: "九州各地（古紙）",         kind: "world", x: 255,  y: 632 },
 
   /* ---------- ここから出ていく（製品・電気・ガス） ---------- */
-  { id: "dst_national",   name: "全国（自動車・建材）",         kind: "dest", x: 52,   y: 400 },
-  { id: "dst_gs",         name: "九州のガソリンスタンド",       kind: "dest", x: 430,  y: 52  },
-  { id: "dst_power",      name: "九州全域",                     kind: "dest", x: 790,  y: 52  },
-  { id: "dst_gas",        name: "ガス会社",                     kind: "dest", x: 1228, y: 198 },
-  { id: "dst_ships",      name: "世界中の海",                   kind: "dest", x: 1228, y: 330 },
-  { id: "dst_cranes",     name: "世界中の港湾",                 kind: "dest", x: 1228, y: 455 },
-  { id: "dst_kyushu_wire", name: "九州各地",                    kind: "dest", x: 110,  y: 688 },
-  { id: "dst_stores",     name: "全国のスーパー・ドラッグストア", kind: "dest", x: 390,  y: 688 },
-  { id: "dst_factories",  name: "国内外の工場",                 kind: "dest", x: 525,  y: 688 },
-  { id: "dst_cardboard",  name: "国内の段ボールメーカー",       kind: "dest", x: 665,  y: 688 },
-  { id: "dst_containers", name: "韓国・中国・台湾・神戸",       kind: "dest", x: 1055, y: 688 }
+  { id: "dst_national",   name: "全国（自動車・建材）",         kind: "dest", x: 52,   y: 388 },
+  { id: "dst_gs",         name: "九州のガソリンスタンド",       kind: "dest", x: 336,  y: 52  },
+  { id: "dst_power",      name: "九州全域",                     kind: "dest", x: 800,  y: 52  },
+  { id: "dst_gas",        name: "ガス会社",                     kind: "dest", x: 1230, y: 168 },
+  { id: "dst_ships",      name: "世界中の海",                   kind: "dest", x: 1230, y: 300 },
+  { id: "dst_cranes",     name: "世界中の港湾",                 kind: "dest", x: 1230, y: 432 },
+  { id: "dst_kyushu_wire", name: "九州各地",                    kind: "dest", x: 110,  y: 632 },
+  { id: "dst_stores",     name: "全国のスーパー・ドラッグストア", kind: "dest", x: 388,  y: 632 },
+  { id: "dst_factories",  name: "国内外の工場",                 kind: "dest", x: 528,  y: 632 },
+  { id: "dst_cardboard",  name: "国内の段ボールメーカー",       kind: "dest", x: 668,  y: 632 },
+  { id: "dst_containers", name: "韓国・中国・台湾・神戸",       kind: "dest", x: 1055, y: 632 }
 ];
 
 const FLOWS = [
@@ -789,8 +810,8 @@ const STORY = {
   const layerNodes = document.getElementById("layer-nodes");
   const defs = svg.querySelector("defs");
 
-  const VB_W = 1280, VB_H = 720;
-  const CENTER = { x: 640, y: 360 };
+  const VB_W = 1280, VB_H = 660;
+  const CENTER = { x: 640, y: 330 };
 
   const nodeById = {};
   NODES.forEach(n => { nodeById[n.id] = n; });
@@ -807,7 +828,7 @@ const STORY = {
 
   function wrapLabel(str, max) {
     if (str.length <= max) return [str];
-    const delims = ["・", "（", "／", "、"];
+    const delims = ["・", "（", "／", "、", " ", "　"];
     let best = -1;
     for (let i = 1; i < str.length - 1; i++) {
       if (delims.includes(str[i])) {
@@ -845,34 +866,47 @@ const STORY = {
     legend.appendChild(b);
   });
 
-  /* ---------- 陸・海・道路 ---------- */
+  /* ---------- 陸・海・道路（大分臨海工業地帯の地形に合わせる） ---------- */
   (function drawLand() {
-    const land = el("path", {
-      class: "land",
-      d: "M 150 168 Q 118 120 300 122 Q 620 110 985 126 Q 1100 130 1086 234 " +
-         "Q 1104 388 1072 512 Q 1082 590 870 578 Q 500 588 275 572 " +
-         "Q 104 578 126 408 Q 114 258 150 168 Z"
-    });
-    layerLand.appendChild(land);
+    function add(cls, d) { layerLand.appendChild(el("path", { class: cls, d })); }
+    function label(cls, x, y, text, rot) {
+      const t = el("text", { class: cls, x: x, y: y, "text-anchor": "middle" });
+      if (rot) t.setAttribute("transform", `rotate(${rot} ${x} ${y})`);
+      t.textContent = text;
+      layerLand.appendChild(t);
+    }
 
-    ["M 612 122 Q 660 224 574 300 Q 520 356 636 414",
-     "M 1086 350 Q 916 374 852 424",
-     "M 150 272 Q 270 268 320 212",
-     "M 470 574 Q 466 512 500 476"
-    ].forEach(d => layerLand.appendChild(el("path", { class: "sea-line", d })));
+    /* 陸地（別府湾ぞいの埋め立て地の全体） */
+    add("land",
+      "M 60 150 L 1224 150 Q 1244 150 1240 206 L 1240 512 Q 1240 560 1176 554 " +
+      "L 110 552 Q 50 556 58 496 L 58 206 Q 54 150 60 150 Z");
 
-    const road = "M 120 402 Q 460 372 780 400 Q 980 420 1084 442";
-    layerLand.appendChild(el("path", { class: "road", d: road }));
-    layerLand.appendChild(el("path", { class: "road-dash", d: road }));
-    ["M 265 372 Q 260 388 266 400",
-     "M 470 400 Q 470 392 470 384",
-     "M 675 372 Q 675 388 672 400",
-     "M 845 404 Q 845 430 845 452",
-     "M 430 452 Q 430 430 432 412"
-    ].forEach(d => {
-      layerLand.appendChild(el("path", { class: "road", d }));
-      layerLand.appendChild(el("path", { class: "road-dash", d }));
-    });
+    /* 別府湾（海）: 下辺が海岸線。上へ突き出す4つの埋め立てブロックと、その間の水路 */
+    add("sea",
+      "M 16 8 L 1264 8 L 1264 248 " +
+      "L 1210 248 L 1210 150 L 1028 150 L 1028 250 " +      /* D 大在ブロック */
+      "L 1009 266 L 1002 266 L 985 248 L 985 150 L 748 150 L 748 250 " + /* 水路 + C 三佐ブロック */
+      "L 726 266 L 719 266 L 700 248 L 700 150 L 478 150 L 478 250 " +  /* 水路 + B 鶴崎ブロック */
+      "L 456 266 L 449 266 L 430 248 L 430 150 L 200 150 L 200 248 " +  /* 水路 + A 日本製鉄ブロック */
+      "L 60 244 L 16 244 Z");
+
+    /* 大野川と乙津川（河口の三角州が工業地帯を分けている） */
+    add("river", "M 312 554 Q 350 440 438 262 L 466 270 Q 392 444 372 554 Z");
+    add("river", "M 452 452 Q 566 350 712 262 L 724 276 Q 584 356 494 452 Z");
+
+    /* 幹線道路（国道197号ぞい）と各ブロックへの引き込み */
+    const road = "M 80 392 Q 420 366 700 384 Q 980 402 1200 380";
+    add("road", road); add("road-dash", road);
+    ["M 300 366 L 300 250", "M 560 366 L 560 252",
+     "M 832 382 L 832 250", "M 1082 384 L 1082 252",
+     "M 180 390 L 180 446", "M 352 384 L 352 486"
+    ].forEach(d => { add("road", d); add("road-dash", d); });
+
+    label("geo-sea", 636, 44, "別 府 湾");
+    label("geo-label", 170, 100, "海路（世界へ）↓", 0);
+    label("geo-label", 318, 500, "大野川", -60);
+    label("geo-label", 560, 322, "乙津川", -32);
+    label("geo-label", 150, 380, "国道197号", 0);
   })();
 
   /* ---------- 矢印マーカー ---------- */
