@@ -605,6 +605,17 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   font-size: .95rem;
   margin-bottom: 8px;
 }
+.chart-callout {
+  background: color-mix(in srgb, var(--ink) 7%, var(--card-bg));
+  border-left: 4px solid var(--ink-soft);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0 0 14px;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.chart-callout:empty { display: none; }
 .chart { display: block; width: 100%; height: auto; overflow: visible; }
 .wc-axis { stroke: color-mix(in srgb, var(--ink) 45%, transparent); stroke-width: 2; }
 .wc-name { font-family: "Yomogi", cursive; font-size: 17px; fill: var(--ink); }
@@ -839,6 +850,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
     <h3>業種別 出荷額ランキング（大分市）</h3>
     <figure class="chart-fig">
       <figcaption id="industryCaption"></figcaption>
+      <p class="chart-callout" id="industryCallout"></p>
       <svg id="industryChart" class="chart" role="img" aria-label="大分市の製造業を業種別に出荷額でくらべたランキング。非鉄金属・鉄鋼・石油製品・化学工業などの順。"></svg>
       <p class="chart-note" id="industryNote"></p>
     </figure>
@@ -1344,9 +1356,10 @@ const PORT = {
     year: "2022年",
     unit: "億円",
     total: 38569,
+    callout: "※ この表は「業種」（同じ種類の工場をまとめたグループ）ごとの合計で、1つの工場だけの数字ではありません。いちばん多い「非鉄金属製造業」が大きいのは、主に佐賀関（大分市南部・この地図にはのっていない工場）の製錬所の分によるもの。地図にのっている日本製鉄は「鉄鋼業」に入っています。",
     note: "大分市の製造業の出荷額（金額）。工場ごとの出荷量・出荷額は会社が公表していないため分からないが、業種ごとの金額は国の統計で分かる。重さ（トン）での業種別データは公表されていない。「非鉄金属製造業」は主に佐賀関の銅の製錬所（この地図には未掲載）。",
     items: [
-      { name: "非鉄金属製造業",   value: 10383, pct: 26.9, hint: "佐賀関の製錬所など" },
+      { name: "非鉄金属製造業",   value: 10383, pct: 26.9, hint: "佐賀関の製錬所（地図外）" },
       { name: "鉄鋼業",           value: 8925,  pct: 23.1, hint: "日本製鉄" },
       { name: "石油製品・石炭製品製造業", value: 6819, pct: 17.7, hint: "ENEOS大分製油所" },
       { name: "化学工業",         value: 6622,  pct: 17.2, hint: "住友化学・クラサスケミカル" },
@@ -1956,6 +1969,8 @@ const PORT = {
     const note = document.getElementById("industryNote");
     if (!svg || !ir) return;
     if (cap) cap.textContent = `大分市の製造業を業種別にくらべると（${ir.year}・出荷額）`;
+    const callout = document.getElementById("industryCallout");
+    if (callout && ir.callout) callout.textContent = ir.callout;
     if (note) note.textContent = "たんい：" + ir.unit + "。" + ir.note + `　出典：経済産業省「経済構造実態調査」（大分市計 ${ir.total.toLocaleString()}${ir.unit}）。`;
     const W = 720, rowH = 74, padL = 190, padR = 140, top = 8;
     const max = Math.max.apply(null, ir.items.map(b => b.value));
@@ -1983,7 +1998,7 @@ const PORT = {
         hintY = midY + 10;
       }
       h += `<text class="ic-hint" x="${nameX}" y="${hintY}" text-anchor="end" dominant-baseline="central">${esc(b.hint)}</text>`;
-      h += `<rect class="wc-bar ${i === 0 ? "is-hi" : ""}" x="${padL}" y="${by}" width="${bw}" height="${bh}" rx="4">` +
+      h += `<rect class="wc-bar" x="${padL}" y="${by}" width="${bw}" height="${bh}" rx="4">` +
         `<title>${esc(b.name)}：約${b.value.toLocaleString()}${ir.unit}（${b.pct}%）</title></rect>`;
       h += `<text class="wc-val" x="${valX}" y="${by + bh / 2 - 8}" dominant-baseline="central">約${b.value.toLocaleString()}${ir.unit}</text>`;
       h += `<text class="ic-pct" x="${valX}" y="${by + bh / 2 + 10}" dominant-baseline="central">（${b.pct}%）</text>`;
