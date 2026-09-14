@@ -621,18 +621,31 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 
 .model { display: flex; flex-direction: column; gap: 6px; }
 .model-step {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   border: 2px solid var(--ink);
   border-left-width: 8px;
   border-radius: 8px;
   padding: 12px 16px;
   background: var(--card-bg);
 }
+.model-icon { flex: 0 0 108px; }
+.model-icon .illus { width: 100%; height: auto; display: block; }
+.model-body { flex: 1 1 auto; min-width: 0; }
 .model-step .model-h { font-family: "Yomogi", cursive; font-weight: 700; margin-bottom: 4px; }
 .model-step p { margin: 0; font-size: .9rem; }
 .model-step.k-import   { border-left-color: var(--c-import); }
 .model-step.k-exchange { border-left-color: var(--c-exchange); }
 .model-step.k-product  { border-left-color: var(--c-product); }
+.model-step.k-import   .illus { color: var(--c-import); }
+.model-step.k-exchange .illus { color: var(--c-exchange); }
+.model-step.k-product  .illus { color: var(--c-product); }
 .model-arrow { text-align: center; color: var(--ink-soft); font-size: .9rem; line-height: 1; }
+@media (max-width: 560px) {
+  .model-step { flex-direction: column; align-items: stretch; }
+  .model-icon { flex-basis: auto; max-width: 160px; margin: 0 auto; }
+}
 
 .trade { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .trade-col {
@@ -1010,7 +1023,64 @@ const ILLUS = {
     <line x1="30" y1="60" x2="70" y2="60"/>`
 };
 
-if (typeof module !== "undefined") { module.exports = { ILLUS, ILLUS_VIEWBOX }; }
+/* =============================================================================
+   「大分港のしごと」3ステップのイメージ図（手書きふうの線画）
+   -----------------------------------------------------------------------------
+   STEP_ICONS[色キー] = SVGの中身。viewBox は "0 0 160 90"。PORT.model の
+   color（import / exchange / product）と対応させて使う。
+   ========================================================================== */
+const STEP_ICONS_VIEWBOX = "0 0 160 90";
+
+const STEP_ICONS = {
+  /* 1. 受け入れる（輸入）―― 世界（地球儀）から大分の港（船）へ原料が集まる */
+  import: `
+    <circle cx="27" cy="43" r="21"/>
+    <path d="M27 22 Q42 43 27 64 M27 22 Q12 43 27 64"/>
+    <line x1="7" y1="35" x2="47" y2="35"/><line x1="5" y1="43" x2="49" y2="43"/><line x1="7" y1="51" x2="47" y2="51"/>
+    <path d="M54 27 Q78 19 100 32"/><path d="M93 27 L100 32 L92 36"/>
+    <path d="M54 43 L104 43"/><path d="M98 39 L104 43 L98 47"/>
+    <path d="M54 59 Q78 68 100 54"/><path d="M92 50 L100 54 L94 59"/>
+    <path d="M90 84 q10 5 20 0 q10 -5 20 0 q10 5 20 0" opacity=".5"/>
+    <path d="M104 70 L154 70 L146 82 L114 82 Z" fill="rgba(0,0,0,.06)"/>
+    <rect x="118" y="58" width="14" height="12" fill="rgba(0,0,0,.06)"/>
+    <line x1="125" y1="58" x2="125" y2="46"/>
+    <rect x="106" y="62" width="8" height="8"/><rect x="132" y="62" width="8" height="8"/><rect x="142" y="62" width="8" height="8"/>`,
+
+  /* 2. 工場で加工する ―― 臨海工業地帯の工場どうしが原料をやり取りし、それぞれの製品をつくる */
+  exchange: `
+    <line x1="4" y1="82" x2="156" y2="82"/>
+    <rect x="8" y="48" width="28" height="34" fill="rgba(0,0,0,.06)"/>
+    <rect x="16" y="32" width="8" height="18" fill="rgba(0,0,0,.06)"/>
+    <line x1="20" y1="32" x2="20" y2="20"/><path d="M16 24 L20 20 L24 24"/>
+    <rect x="12" y="6" width="16" height="8" fill="rgba(0,0,0,.06)"/>
+    <rect x="64" y="34" width="34" height="48" fill="rgba(0,0,0,.06)"/>
+    <rect x="77" y="16" width="8" height="20" fill="rgba(0,0,0,.06)"/>
+    <circle cx="81" cy="9" r="6"/>
+    <path d="M81 3 L81 0 M81 15 L81 18 M75 9 L72 9 M87 9 L90 9"/>
+    <rect x="122" y="52" width="28" height="30" fill="rgba(0,0,0,.06)"/>
+    <rect x="131" y="36" width="8" height="18" fill="rgba(0,0,0,.06)"/>
+    <path d="M135 36 Q128 26 135 19 Q142 26 135 36 Z" fill="rgba(0,0,0,.06)"/>
+    <path d="M38 64 L62 64"/><path d="M44 60 L38 64 L44 68"/><path d="M56 60 L62 64 L56 68"/>
+    <path d="M100 64 L120 64"/><path d="M106 60 L100 64 L106 68"/><path d="M114 60 L120 64 L114 68"/>`,
+
+  /* 3. 送り出す（国内・海外）―― 大分の港（船）から日本各地と世界へ製品が広がる */
+  product: `
+    <path d="M2 78 q10 6 20 0 q10 -6 20 0 q10 6 20 0 q10 -6 20 0 q10 6 20 0 q10 -6 20 0" opacity=".5"/>
+    <path d="M6 70 L56 70 L48 82 L16 82 Z" fill="rgba(0,0,0,.06)"/>
+    <rect x="20" y="58" width="14" height="12" fill="rgba(0,0,0,.06)"/>
+    <line x1="27" y1="58" x2="27" y2="46"/>
+    <path d="M60 60 Q90 32 116 27"/><path d="M108 25 L116 27 L112 34"/>
+    <path d="M60 68 Q90 78 116 71"/><path d="M108 75 L116 71 L112 65"/>
+    <path d="M118 30 L118 18 L128 10 L138 18 L138 30 Z" fill="rgba(0,0,0,.06)"/>
+    <rect x="124" y="22" width="8" height="8"/>
+    <text x="128" y="42" font-size="11" text-anchor="middle" stroke="none" fill="currentColor">国内</text>
+    <circle cx="128" cy="63" r="13"/>
+    <path d="M128 50 Q136 63 128 76 M128 50 Q120 63 128 76"/>
+    <line x1="116" y1="59" x2="140" y2="59"/><line x1="116" y1="67" x2="140" y2="67"/>
+    <text x="128" y="88" font-size="11" text-anchor="middle" stroke="none" fill="currentColor">海外</text>`
+};
+
+if (typeof module !== "undefined") { module.exports = { ILLUS, ILLUS_VIEWBOX, STEP_ICONS, STEP_ICONS_VIEWBOX }; }
 
 
 /* =============================================================================
@@ -1800,7 +1870,10 @@ const PORT = {
     PORT.model.forEach((m, i) => {
       const d = document.createElement("div");
       d.className = "model-step k-" + m.color;
-      d.innerHTML = `<div class="model-h">${esc(m.step)}</div><p>${esc(m.text)}</p>`;
+      const icon = (typeof STEP_ICONS !== "undefined" && STEP_ICONS[m.color])
+        ? `<div class="model-icon" aria-hidden="true"><svg viewBox="${STEP_ICONS_VIEWBOX}" class="illus">${STEP_ICONS[m.color]}</svg></div>`
+        : "";
+      d.innerHTML = icon + `<div class="model-body"><div class="model-h">${esc(m.step)}</div><p>${esc(m.text)}</p></div>`;
       mw.appendChild(d);
       if (i < PORT.model.length - 1) {
         const a = document.createElement("div");
