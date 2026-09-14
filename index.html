@@ -812,8 +812,8 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
   <section class="map-wrap">
     <div class="map-stage">
       <div class="base-toggle" role="group" aria-label="地図の種類">
-        <button type="button" data-base="sat" aria-pressed="true">航空写真</button>
-        <button type="button" data-base="map" aria-pressed="false">地図</button>
+        <button type="button" data-base="sat" aria-pressed="false">航空写真</button>
+        <button type="button" data-base="map" aria-pressed="true">地図</button>
       </div>
       <div id="map" role="application" aria-label="大分臨海工業地帯の地図"></div>
 
@@ -1566,7 +1566,7 @@ const PORT = {
   }
   document.querySelectorAll("[data-base]").forEach(btn =>
     btn.addEventListener("click", () => setBase(btn.dataset.base)));
-  setBase("sat");
+  setBase("map");
 
   /* ---------- 駅（日豊本線） ---------- */
   const STATIONS = [
