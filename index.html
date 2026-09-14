@@ -706,14 +706,44 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 
 .src-note { font-size: .74rem; color: var(--ink-soft); margin: 20px 0 0; }
 
-.original { margin-top: 26px; }
-.original summary {
-  font-family: "Yomogi", cursive;
-  cursor: pointer;
-  padding: 8px 0;
-  color: var(--ink-soft);
+.original {
+  margin-top: 30px;
+  border: 2.5px solid var(--accent);
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: 3px 4px 0 var(--shadow);
+  overflow: hidden;
 }
-.original figure { margin: 12px 0 0; text-align: center; }
+.original summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+}
+.original summary::-webkit-details-marker { display: none; }
+.original summary::marker { content: ""; }
+.original summary:hover,
+.original summary:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.original-icon { font-size: 1.7rem; line-height: 1; flex: 0 0 auto; }
+.original-text { flex: 1 1 auto; min-width: 0; }
+.original-title {
+  display: block;
+  font-family: "Yomogi", cursive;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.original-sub { display: block; font-size: .8rem; color: var(--ink-soft); margin-top: 2px; }
+.original-arrow {
+  flex: 0 0 auto;
+  font-size: .85rem;
+  color: var(--accent);
+  transition: transform .2s ease;
+}
+.original[open] .original-arrow { transform: rotate(90deg); }
+.original figure { margin: 0; padding: 0 18px 18px; text-align: center; }
 .original img {
   max-width: 100%;
   border: 3px solid var(--ink);
@@ -881,7 +911,14 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 
   <section class="original">
     <details>
-      <summary>元の手書き地図（模造紙）を見る</summary>
+      <summary>
+        <span class="original-icon" aria-hidden="true">🖍️</span>
+        <span class="original-text">
+          <span class="original-title">元の手書き地図（模造紙）を見る</span>
+          <span class="original-sub">この地図をもとにWEB化しました</span>
+        </span>
+        <span class="original-arrow" aria-hidden="true">▶</span>
+      </summary>
       <figure>
         <img src="assets/img/original-map.jpg" alt="模造紙に手書きされた、大分市臨海工業地帯の工場・港の調査地図">
         <figcaption>この地図をもとにWEB化しました。</figcaption>
