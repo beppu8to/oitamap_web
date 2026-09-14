@@ -610,6 +610,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 .wc-name { font-family: "Yomogi", cursive; font-size: 17px; fill: var(--ink); }
 .wc-val  { font-family: "Kaisei Decol", serif; font-size: 16px; fill: var(--ink); }
 .ic-hint { font-family: "Zen Kurenaido", sans-serif; font-size: 12px; fill: var(--ink-soft); }
+.ic-pct  { font-family: "Zen Kurenaido", sans-serif; font-size: 13px; fill: var(--ink-soft); }
 .wc-bar {
   fill: color-mix(in srgb, var(--c-import) 45%, var(--card-bg));
   stroke: var(--c-import);
@@ -1841,9 +1842,10 @@ const PORT = {
     const note = document.getElementById("weightNote");
     if (!svg) return;
     if (note) note.textContent = "たんい：" + wc.unit + "。" + wc.note;
-    const W = 660, rowH = 62, padL = 88, padR = 96, top = 8;
+    const W = 660, rowH = 62, padL = 88, padR = 132, top = 8;
     const max = Math.max.apply(null, wc.bars.map(b => b.value));
     const chartW = W - padL - padR;
+    const valX = padL + chartW + 12;
     const H = top + wc.bars.length * rowH + 6;
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     let h = `<line class="wc-axis" x1="${padL}" y1="${top}" x2="${padL}" y2="${H - 6}"/>`;
@@ -1855,7 +1857,7 @@ const PORT = {
       h += `<text class="wc-name" x="${padL - 12}" y="${y + rowH / 2}" text-anchor="end" dominant-baseline="central">${esc(b.name)}</text>`;
       h += `<rect class="wc-bar ${b.highlight ? "is-hi" : ""}" x="${padL}" y="${by}" width="${bw}" height="${bh}" rx="4">` +
         `<title>${esc(b.name)}：約${b.value.toLocaleString()} ${wc.unit}</title></rect>`;
-      h += `<text class="wc-val" x="${padL + bw + 10}" y="${y + rowH / 2}" dominant-baseline="central">約${b.value.toLocaleString()}</text>`;
+      h += `<text class="wc-val" x="${valX}" y="${y + rowH / 2}" dominant-baseline="central">約${b.value.toLocaleString()}${wc.unit.replace(/／.*$/, "")}</text>`;
     });
     svg.innerHTML = h;
   }
@@ -1867,9 +1869,10 @@ const PORT = {
     if (!svg || !ir) return;
     if (cap) cap.textContent = `大分市の製造業を業種別にくらべると（${ir.year}・出荷額）`;
     if (note) note.textContent = "たんい：" + ir.unit + "。" + ir.note + `　出典：経済産業省「経済構造実態調査」（大分市計 ${ir.total.toLocaleString()}${ir.unit}）。`;
-    const W = 660, rowH = 74, padL = 150, padR = 96, top = 8;
+    const W = 680, rowH = 74, padL = 150, padR = 140, top = 8;
     const max = Math.max.apply(null, ir.items.map(b => b.value));
     const chartW = W - padL - padR;
+    const valX = padL + chartW + 12;
     const H = top + ir.items.length * rowH + 6;
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     let h = `<line class="wc-axis" x1="${padL}" y1="${top}" x2="${padL}" y2="${H - 6}"/>`;
@@ -1883,7 +1886,8 @@ const PORT = {
       h += `<text class="ic-hint" x="${padL - 12}" y="${midY + 4}" text-anchor="end" dominant-baseline="central">${esc(b.hint)}</text>`;
       h += `<rect class="wc-bar ${i === 0 ? "is-hi" : ""}" x="${padL}" y="${by}" width="${bw}" height="${bh}" rx="4">` +
         `<title>${esc(b.name)}：約${b.value.toLocaleString()}${ir.unit}（${b.pct}%）</title></rect>`;
-      h += `<text class="wc-val" x="${padL + bw + 10}" y="${by + bh / 2}" dominant-baseline="central">約${b.value.toLocaleString()}（${b.pct}%）</text>`;
+      h += `<text class="wc-val" x="${valX}" y="${by + bh / 2 - 8}" dominant-baseline="central">約${b.value.toLocaleString()}${ir.unit}</text>`;
+      h += `<text class="ic-pct" x="${valX}" y="${by + bh / 2 + 10}" dominant-baseline="central">（${b.pct}%）</text>`;
     });
     svg.innerHTML = h;
   }
