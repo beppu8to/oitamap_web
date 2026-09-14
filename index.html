@@ -608,7 +608,8 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
 .chart { display: block; width: 100%; height: auto; overflow: visible; }
 .wc-axis { stroke: color-mix(in srgb, var(--ink) 45%, transparent); stroke-width: 2; }
 .wc-name { font-family: "Yomogi", cursive; font-size: 17px; fill: var(--ink); }
-.wc-val  { font-family: "Kaisei Decol", serif; font-size: 17px; fill: var(--ink); }
+.wc-val  { font-family: "Kaisei Decol", serif; font-size: 16px; fill: var(--ink); }
+.ic-hint { font-family: "Zen Kurenaido", sans-serif; font-size: 12px; fill: var(--ink-soft); }
 .wc-bar {
   fill: color-mix(in srgb, var(--c-import) 45%, var(--card-bg));
   stroke: var(--c-import);
@@ -819,6 +820,13 @@ main { max-width: var(--maxw); margin: 0 auto; padding: 8px 16px 60px; }
       <figcaption>重さでくらべる港の大きさ（1年あたり・おおよそ）</figcaption>
       <svg id="weightChart" class="chart" role="img" aria-label="重さでみた1年間の貨物量。大分港 約6,800万トン、博多港 約3,100万トン。大分港は博多港のおよそ2倍。"></svg>
       <p class="chart-note" id="weightNote"></p>
+    </figure>
+
+    <h3>業種別 出荷額ランキング（大分市）</h3>
+    <figure class="chart-fig">
+      <figcaption id="industryCaption"></figcaption>
+      <svg id="industryChart" class="chart" role="img" aria-label="大分市の製造業を業種別に出荷額でくらべたランキング。非鉄金属・鉄鋼・石油製品・化学工業などの順。"></svg>
+      <p class="chart-note" id="industryNote"></p>
     </figure>
 
     <h3>大分港のしくみ（3ステップ）</h3>
@@ -1260,6 +1268,22 @@ const PORT = {
       { name: "博多港", value: 3100, highlight: false }
     ]
   },
+  /* 業種別 出荷額ランキング（大分市・2022年、経済産業省 経済構造実態調査） */
+  industryRank: {
+    year: "2022年",
+    unit: "億円",
+    total: 38569,
+    note: "大分市の製造業の出荷額（金額）。工場ごとの出荷量・出荷額は会社が公表していないため分からないが、業種ごとの金額は国の統計で分かる。重さ（トン）での業種別データは公表されていない。「非鉄金属製造業」は主に佐賀関の銅の製錬所（この地図には未掲載）。",
+    items: [
+      { name: "非鉄金属製造業",   value: 10383, pct: 26.9, hint: "佐賀関の製錬所など" },
+      { name: "鉄鋼業",           value: 8925,  pct: 23.1, hint: "日本製鉄" },
+      { name: "石油製品・石炭製品製造業", value: 6819, pct: 17.7, hint: "ENEOS大分製油所" },
+      { name: "化学工業",         value: 6622,  pct: 17.2, hint: "住友化学・クラサスケミカル" },
+      { name: "電子部品・デバイス・電子回路製造業", value: 1323, pct: 3.4, hint: "地図には未掲載" },
+      { name: "その他業種",       value: 3897,  pct: 10.1, hint: "造船・製紙・電線など" }
+    ]
+  },
+
   /* 港をつくる7つの地区 */
   districts: [
     { name: "西大分地区", role: "関西（神戸）行きのフェリー。人とトラックの旅客ターミナル" },
@@ -1769,6 +1793,7 @@ const PORT = {
     });
 
     buildWeightChart();
+    buildIndustryChart();
 
     const mw = document.getElementById("portModel");
     PORT.model.forEach((m, i) => {
@@ -1831,6 +1856,34 @@ const PORT = {
       h += `<rect class="wc-bar ${b.highlight ? "is-hi" : ""}" x="${padL}" y="${by}" width="${bw}" height="${bh}" rx="4">` +
         `<title>${esc(b.name)}：約${b.value.toLocaleString()} ${wc.unit}</title></rect>`;
       h += `<text class="wc-val" x="${padL + bw + 10}" y="${y + rowH / 2}" dominant-baseline="central">約${b.value.toLocaleString()}</text>`;
+    });
+    svg.innerHTML = h;
+  }
+  function buildIndustryChart() {
+    const ir = PORT.industryRank;
+    const svg = document.getElementById("industryChart");
+    const cap = document.getElementById("industryCaption");
+    const note = document.getElementById("industryNote");
+    if (!svg || !ir) return;
+    if (cap) cap.textContent = `大分市の製造業を業種別にくらべると（${ir.year}・出荷額）`;
+    if (note) note.textContent = "たんい：" + ir.unit + "。" + ir.note + `　出典：経済産業省「経済構造実態調査」（大分市計 ${ir.total.toLocaleString()}${ir.unit}）。`;
+    const W = 660, rowH = 74, padL = 150, padR = 96, top = 8;
+    const max = Math.max.apply(null, ir.items.map(b => b.value));
+    const chartW = W - padL - padR;
+    const H = top + ir.items.length * rowH + 6;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    let h = `<line class="wc-axis" x1="${padL}" y1="${top}" x2="${padL}" y2="${H - 6}"/>`;
+    ir.items.forEach((b, i) => {
+      const y = top + i * rowH;
+      const bw = Math.max(6, chartW * b.value / max);
+      const bh = 20;
+      const midY = y + rowH / 2;
+      const by = midY - bh / 2 - 7;
+      h += `<text class="wc-name" x="${padL - 12}" y="${midY - 14}" text-anchor="end" dominant-baseline="central">${esc(b.name)}</text>`;
+      h += `<text class="ic-hint" x="${padL - 12}" y="${midY + 4}" text-anchor="end" dominant-baseline="central">${esc(b.hint)}</text>`;
+      h += `<rect class="wc-bar ${i === 0 ? "is-hi" : ""}" x="${padL}" y="${by}" width="${bw}" height="${bh}" rx="4">` +
+        `<title>${esc(b.name)}：約${b.value.toLocaleString()}${ir.unit}（${b.pct}%）</title></rect>`;
+      h += `<text class="wc-val" x="${padL + bw + 10}" y="${by + bh / 2}" dominant-baseline="central">約${b.value.toLocaleString()}（${b.pct}%）</text>`;
     });
     svg.innerHTML = h;
   }
