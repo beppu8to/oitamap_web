@@ -1934,6 +1934,21 @@ const PORT = {
     });
     svg.innerHTML = h;
   }
+  /* 業種名が長いときに「・」の近くで2行に折り返す */
+  function wrapLabel(name, maxChars) {
+    if (name.length <= maxChars) return [name];
+    const points = [];
+    for (let i = 0; i < name.length; i++) if (name[i] === "・") points.push(i);
+    if (points.length) {
+      let best = points[0], bestDiff = Infinity;
+      points.forEach(p => {
+        const diff = Math.abs(p - name.length / 2);
+        if (diff < bestDiff) { bestDiff = diff; best = p; }
+      });
+      return [name.slice(0, best + 1), name.slice(best + 1)];
+    }
+    return [name.slice(0, maxChars), name.slice(maxChars)];
+  }
   function buildIndustryChart() {
     const ir = PORT.industryRank;
     const svg = document.getElementById("industryChart");
@@ -1942,7 +1957,7 @@ const PORT = {
     if (!svg || !ir) return;
     if (cap) cap.textContent = `大分市の製造業を業種別にくらべると（${ir.year}・出荷額）`;
     if (note) note.textContent = "たんい：" + ir.unit + "。" + ir.note + `　出典：経済産業省「経済構造実態調査」（大分市計 ${ir.total.toLocaleString()}${ir.unit}）。`;
-    const W = 680, rowH = 74, padL = 150, padR = 140, top = 8;
+    const W = 720, rowH = 74, padL = 190, padR = 140, top = 8;
     const max = Math.max.apply(null, ir.items.map(b => b.value));
     const chartW = W - padL - padR;
     const valX = padL + chartW + 12;
@@ -1955,8 +1970,19 @@ const PORT = {
       const bh = 20;
       const midY = y + rowH / 2;
       const by = midY - bh / 2 - 7;
-      h += `<text class="wc-name" x="${padL - 12}" y="${midY - 14}" text-anchor="end" dominant-baseline="central">${esc(b.name)}</text>`;
-      h += `<text class="ic-hint" x="${padL - 12}" y="${midY + 4}" text-anchor="end" dominant-baseline="central">${esc(b.hint)}</text>`;
+      const nameX = padL - 12;
+      const lines = wrapLabel(b.name, 9);
+      let hintY;
+      if (lines.length === 1) {
+        h += `<text class="wc-name" x="${nameX}" y="${midY - 14}" text-anchor="end" dominant-baseline="central">${esc(lines[0])}</text>`;
+        hintY = midY + 4;
+      } else {
+        h += `<text class="wc-name" x="${nameX}" text-anchor="end">` +
+          `<tspan x="${nameX}" y="${midY - 24}">${esc(lines[0])}</tspan>` +
+          `<tspan x="${nameX}" y="${midY - 8}">${esc(lines[1])}</tspan></text>`;
+        hintY = midY + 10;
+      }
+      h += `<text class="ic-hint" x="${nameX}" y="${hintY}" text-anchor="end" dominant-baseline="central">${esc(b.hint)}</text>`;
       h += `<rect class="wc-bar ${i === 0 ? "is-hi" : ""}" x="${padL}" y="${by}" width="${bw}" height="${bh}" rx="4">` +
         `<title>${esc(b.name)}：約${b.value.toLocaleString()}${ir.unit}（${b.pct}%）</title></rect>`;
       h += `<text class="wc-val" x="${valX}" y="${by + bh / 2 - 8}" dominant-baseline="central">約${b.value.toLocaleString()}${ir.unit}</text>`;
